@@ -35,7 +35,7 @@ npm run typecheck       # tsc --noEmit
 
 ```bash
 npm run build:web       # expo export -p web + manifest, service worker, icônes
-npm run serve:web       # sert dist/ en local
+npm run serve:web       # http://localhost:8080/kaneone-suite/
 ```
 
 `dist/` contient `manifest.webmanifest`, `sw.js` (pré-cache hors ligne), icônes 192/512/maskable, `404.html` (routage SPA) et `.nojekyll`.
