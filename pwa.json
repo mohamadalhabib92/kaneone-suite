@@ -1,0 +1,10 @@
+{
+  "name": "KaneOne Suite — OS family-office multi-holding",
+  "short_name": "KaneOne",
+  "description": "Pilotage groupe, actifs, mobilité, finance, dossier, GMAO, immobilier et portail. Fonctionne hors ligne en mode démo.",
+  "lang": "fr",
+  "theme_color": "#0A1020",
+  "background_color": "#0A1020",
+  "dark": true,
+  "categories": ["business", "finance", "productivity"]
+}

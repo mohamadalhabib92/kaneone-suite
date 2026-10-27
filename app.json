@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "KaneOne Suite",
+    "slug": "kaneone-suite",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "scheme": "kaneone",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A1020",
+    "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#0A1020" },
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.yourcompany.kaneone" },
+    "android": {
+      "package": "com.yourcompany.kaneone",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A1020",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": { "favicon": "./assets/favicon.png", "output": "single", "bundler": "metro", "name": "KaneOne Suite", "shortName": "KaneOne", "themeColor": "#0A1020", "backgroundColor": "#0A1020", "lang": "fr" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": false, "baseUrl": "/kaneone-suite" }
+  }
+}
