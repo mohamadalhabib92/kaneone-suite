@@ -47,16 +47,25 @@ Le workflow `.github/workflows/pages.yml` construit et publie `dist/` à chaque 
 
 ## Configuration (placeholders)
 
-Copiez `.env.example` en `.env`. Sans configuration, l’app reste entièrement utilisable en mode démo local.
+Copiez `.env.example` en `.env`. Sans configuration, l’app reste entièrement utilisable en mode démo local. Aucun appel réseau au démarrage : pas d’IA, pas de Supabase, pas de Sentry tant que le DSN est un placeholder.
 
 | Variable | Usage | Statut |
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | Auth + base de données | `YOUR_SUPABASE_URL` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Clé publique anon (protégée par RLS) | `YOUR_SUPABASE_ANON_KEY` |
-| `EXPO_PUBLIC_API_BASE_URL` | API serveur (PDF serveur, sync) | `YOUR_API_BASE_URL` |
+| `EXPO_PUBLIC_SENTRY_DSN` | Journal de crash, désactivé si placeholder | `YOUR_SENTRY_DSN` |
+| `EXPO_PUBLIC_API_BASE_URL` | API serveur, Phase 2, non appelée | `YOUR_API_BASE_URL` |
 | `OPENAI_API_KEY` | Assistants IA — **serveur uniquement**, Phase 2 | `YOUR_OPENAI_API_KEY` |
+| `PORT` | Processus serveur | `YOUR_PORT` |
+| `EXPO_NO_CAPABILITY_SYNC` | Build iOS, pas de sync des capabilities | `1` |
 
-Ne mettez **jamais** de secret dans une variable `EXPO_PUBLIC_*` : elles sont embarquées dans l’app.
+Équipe Apple conservée : `Y9XF9RY2BU`. Bundle `ch.mohamadba.kaneonesuite`. `baseUrl` web uniquement : `/kaneone-suite`.
+
+Flags forcés à `false` dans l’app : `FEATURE_AI`, `FEATURE_BANK_SYNC`, `FEATURE_ESIGN`, `FEATURE_PUSH`.
+
+Décisions à valider (jamais une valeur inventée) : `YOUR_REPORTING_CURRENCY`, `YOUR_CONSOLIDATION_GAAP`, `YOUR_LEGAL_STRUCTURE`, `YOUR_DATA_REGION`, `YOUR_FX_RATE_SOURCE`, `YOUR_BUDGET_ALERT_PCT`, `YOUR_ESIGN_PROVIDER`, `YOUR_ARMORED_PERMITS`, `YOUR_REVIEW_ACCOUNT`, `YOUR_SUPPORT_EMAIL`.
+
+Ne mettez **jamais** de secret dans une variable `EXPO_PUBLIC_*` : elles sont embarquées dans l’app. La clé de stockage locale reste `kaneone-suite@v1`.
 
 ## Limites connues
 

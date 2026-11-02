@@ -29,7 +29,16 @@ export default function TabsLayout() {
       <Tabs.Screen name="mobilite" options={{ title: 'Mobilité', tabBarIcon: icon('car-sport'), href: internal ? undefined : null }} />
       <Tabs.Screen name="finance" options={{ title: 'Finance', tabBarIcon: icon('stats-chart'), href: finance ? undefined : null }} />
       <Tabs.Screen name="dossier" options={{ title: 'Dossier', tabBarIcon: icon('folder-open'), href: internal ? undefined : null }} />
-      <Tabs.Screen name="portail" options={{ title: 'Portail', tabBarIcon: icon('people'), href: internal ? null : undefined }} />
+      <Tabs.Screen
+        name="portail"
+        options={{
+          title: 'Portail',
+          tabBarIcon: icon('people'),
+          // Masquer l’onglet pour les rôles internes sans le retirer du routeur :
+          // href:null redirige vers Pilotage et rend le lien « Plus » inopérant.
+          tabBarItemStyle: internal ? { display: 'none' } : undefined,
+        }}
+      />
       <Tabs.Screen name="plus" options={{ title: 'Plus', tabBarIcon: icon('grid') }} />
     </Tabs>
   );

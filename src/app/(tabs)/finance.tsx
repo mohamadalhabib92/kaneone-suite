@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/kit/theme';
-import { Badge, Button, Card, Chip, Progress, Row, Screen, Section, Segmented, Stat, T, useToast } from '@/kit/ui';
+import { Badge, Button, Card, Chip, DemoMark, Progress, Row, Screen, Section, Segmented, Stat, T, useToast } from '@/kit/ui';
 import { fmtCompactEUR, fmtMoney, fmtNumber } from '@/kit/format';
 import { exportText, printPage, toCSV } from '@/kit/files';
 import { COUNTRIES, FINANCE_REPOS, SPVS, spvOf } from '@/data/demo';
@@ -125,10 +125,10 @@ export default function Finance() {
                     </T>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
-                    <T v="small" style={{ fontWeight: '700' }} color={e.credit ? t.success : t.text}>
-                      {e.credit ? '+' : '−'}
-                      {fmtMoney(e.credit || e.debit, cur, 0)}
+                    <T v="small" tabular style={{ fontWeight: '700' }} color={e.credit ? t.success : t.dangerText} accessibilityLabel={e.credit ? 'crédit' : 'débit, négatif'}>
+                      {e.credit ? `+${fmtMoney(e.credit, cur, 0)}` : fmtMoney(-Math.abs(e.debit), cur, 0)}
                     </T>
+                    <DemoMark />
                     <T v="caption" color={e.status === 'validée' ? t.success : t.warning}>
                       {e.status}
                     </T>
@@ -195,13 +195,13 @@ export function LiasseTable({ period }: { period: string }) {
           <T v="small" style={cell}>
             {fmtNumber(l.charges / 1000, 1)}
           </T>
-          <T v="small" style={{ ...cell, fontWeight: '700' }} color={l.ebitda < 0 ? t.danger : t.text}>
+          <T v="small" tabular style={{ ...cell, fontWeight: '700' }} color={l.ebitda < 0 ? t.dangerText : t.text} accessibilityLabel={l.ebitda < 0 ? `${fmtNumber(l.ebitda / 1000, 1)} k€, négatif, démo` : `${fmtNumber(l.ebitda / 1000, 1)} k€, démo`}>
             {fmtNumber(l.ebitda / 1000, 1)}
           </T>
         </Row>
       ))}
       <T v="caption" muted style={{ marginTop: 6 }}>
-        En k€, intragroupe éliminé. Quote-part groupe : {fmtNumber(total.share / 1000, 1)} k€.
+        Démo / Échantillon. En k€, intragroupe éliminé. Quote-part groupe : {fmtNumber(total.share / 1000, 1)} k€. Un montant négatif porte le signe « − ».
       </T>
     </Card>
   );

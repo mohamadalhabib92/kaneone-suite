@@ -32,14 +32,17 @@ export default function ProjectScreen() {
   const edit = can(s.role, 'immo.manage');
   const site = siteOf(p.siteId);
   const cur = p.phases.findIndex((x) => x.status === 'en cours');
-  const lc = (l: Level) => (l === 'élevé' ? t.danger : l === 'moyen' ? t.warning : t.success);
+  const lc = (l: Level) => (l === 'élevé' ? t.dangerText : l === 'moyen' ? t.warning : t.success);
   return (
     <Screen header={<BackHeader title={p.name} subtitle={`${site?.name ?? ''} · ${spvOf(p.spvId)?.name ?? ''}`} />}>
       <DemoNotice />
       <Card>
-        <KV k="Budget" v={fmtCompactEUR(p.budgetK * 1000)} />
-        <KV k="Engagé" v={fmtCompactEUR(p.spentK * 1000)} strong />
-        <Progress value={p.budgetK ? p.spentK / p.budgetK : 0} color={p.spentK > p.budgetK ? t.danger : t.primary} />
+        <KV k="Budget" v={fmtCompactEUR(p.budgetK * 1000)} amount={p.budgetK * 1000} />
+        <KV k="Engagé" v={fmtCompactEUR(p.spentK * 1000)} amount={p.spentK * 1000} strong />
+        <Progress value={p.budgetK ? Math.min(1, p.spentK / p.budgetK) : 0} color={p.spentK > p.budgetK ? t.danger : t.primary} />
+        <T v="small" color={p.spentK > p.budgetK ? t.dangerText : t.textMuted}>
+          {p.spentK > p.budgetK ? `Dépassement de ${fmtCompactEUR((p.spentK - p.budgetK) * 1000)} — seuil YOUR_BUDGET_ALERT_PCT à valider` : 'Dans le budget'}
+        </T>
         <KV k="SPV" v={spvOf(p.spvId)?.name ?? '—'} />
       </Card>
       <Row wrap>
@@ -98,7 +101,7 @@ export default function ProjectScreen() {
               />
               <View style={{ flex: 1 }}>
                 <T style={{ fontWeight: '600' }}>{m.title}</T>
-                <T v="caption" color={!m.done && m.due < isoDay(new Date()) ? t.danger : t.textMuted}>
+                <T v="caption" color={!m.done && m.due < isoDay(new Date()) ? t.dangerText : t.textMuted}>
                   Échéance {fmtDate(m.due)}
                 </T>
               </View>

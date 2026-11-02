@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Animated,
   Modal,
@@ -18,7 +19,9 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDemoMode } from './demo';
 import { useOnline } from './net';
+import { withTimeout } from './store';
 import { alpha, useTheme } from './theme';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -47,6 +50,8 @@ export function T({
   children,
   numberOfLines,
   selectable,
+  tabular,
+  accessibilityLabel,
 }: {
   v?: TVariant;
   color?: string;
@@ -56,6 +61,8 @@ export function T({
   children: React.ReactNode;
   numberOfLines?: number;
   selectable?: boolean;
+  tabular?: boolean;
+  accessibilityLabel?: string;
 }) {
   const t = useTheme();
   const s = sizes[v];
@@ -63,6 +70,7 @@ export function T({
     <Text
       numberOfLines={numberOfLines}
       selectable={selectable}
+      accessibilityLabel={accessibilityLabel}
       style={[
         {
           fontSize: s.fs * t.fontScale,
@@ -72,6 +80,7 @@ export function T({
           textAlign: center ? 'center' : undefined,
           letterSpacing: v === 'caption' || v === 'label' ? 0.4 : undefined,
           textTransform: v === 'caption' ? 'uppercase' : undefined,
+          fontVariant: tabular || v === 'h1' || v === 'h2' || v === 'mono' ? ['tabular-nums'] : undefined,
           fontFamily: v === 'mono' ? Platform.select({ ios: 'Menlo', android: 'monospace', default: 'ui-monospace, Menlo, monospace' }) : undefined,
         },
         style,
@@ -99,7 +108,7 @@ export function Screen({
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const inner = (
-    <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', padding: padded ? 16 : 0, gap: 14, paddingBottom: 40 }}>{children}</View>
+    <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', padding: padded ? 16 : 0, gap: t.gap, paddingBottom: 28 + insets.bottom }}>{children}</View>
   );
   return (
     <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: insets.top }}>
@@ -121,11 +130,11 @@ export function Header({ title, subtitle, right, left }: { title: string; subtit
     <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       {left}
       <View style={{ flex: 1 }}>
-        <T v="h1" numberOfLines={1}>
+        <T v="h1" numberOfLines={3}>
           {title}
         </T>
         {subtitle ? (
-          <T v="small" muted numberOfLines={2}>
+          <T v="small" muted numberOfLines={3}>
             {subtitle}
           </T>
         ) : null}
@@ -146,7 +155,7 @@ export function Card({ children, style, onPress, accent, a11y }: { children: Rea
     borderRadius: t.radius,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: t.border,
-    padding: 14,
+    padding: t.cardPad,
     gap: 8,
     borderLeftWidth: accent ? 3 : StyleSheet.hairlineWidth,
     borderLeftColor: accent ?? t.border,
@@ -206,7 +215,7 @@ export function Button({
 }) {
   const t = useTheme();
   const bg = { primary: t.primary, secondary: t.surface2, ghost: 'transparent', danger: t.danger, success: t.success }[kind];
-  const fg = { primary: t.primaryText, secondary: t.text, ghost: t.primary, danger: '#fff', success: '#fff' }[kind];
+  const fg = { primary: t.primaryText, secondary: t.text, ghost: t.primary, danger: t.onDanger, success: t.onSuccess }[kind];
   return (
     <Pressable
       accessibilityRole="button"
@@ -341,7 +350,7 @@ export function Field({ label, hint, error, ...props }: TextInputProps & { label
         ]}
       />
       {error ? (
-        <T v="small" color={t.danger}>
+        <T v="small" color={t.dangerText}>
           {error}
         </T>
       ) : hint ? (
@@ -365,7 +374,7 @@ export function ToggleRow({ label, sub, value, onChange, disabled }: { label: st
           </T>
         ) : null}
       </View>
-      <Switch accessibilityLabel={label} value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: t.primary, false: t.surface2 }} thumbColor="#fff" />
+      <Switch accessibilityLabel={label} value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: t.primary, false: t.surface2 }} thumbColor={t.thumb} />
     </Row>
   );
 }
@@ -429,8 +438,8 @@ export function OfflineBadge({ text = 'Hors ligne — données en cache' }: { te
   if (online) return null;
   return (
     <View accessibilityRole="alert" style={{ backgroundColor: t.warning, paddingVertical: 6, paddingHorizontal: 12, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
-      <Ionicons name="cloud-offline" size={14} color="#111" />
-      <Text style={{ color: '#111', fontWeight: '700', fontSize: 12 }}>{text}</Text>
+      <Ionicons name="cloud-offline" size={14} color={t.onWarning} />
+      <Text style={{ color: t.onWarning, fontWeight: '700', fontSize: 12 }}>{text}</Text>
     </View>
   );
 }
@@ -458,7 +467,22 @@ export function EmptyState({ icon = 'sparkles', title, text, action }: { icon?: 
 export function Skeleton({ height = 16, width = '100%', style }: { height?: number; width?: number | `${number}%`; style?: StyleProp<ViewStyle> }) {
   const t = useTheme();
   const op = useRef(new Animated.Value(0.4)).current;
+  const [reduce, setReduce] = useState(false);
   useEffect(() => {
+    let alive = true;
+    const read = AccessibilityInfo.isReduceMotionEnabled;
+    if (typeof read === 'function') read().then((v) => { if (alive) setReduce(v); }).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v) => setReduce(v));
+    return () => {
+      alive = false;
+      sub?.remove();
+    };
+  }, []);
+  useEffect(() => {
+    if (reduce) {
+      op.setValue(0.85);
+      return;
+    }
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(op, { toValue: 1, duration: 650, useNativeDriver: Platform.OS !== 'web' }),
@@ -467,7 +491,7 @@ export function Skeleton({ height = 16, width = '100%', style }: { height?: numb
     );
     loop.start();
     return () => loop.stop();
-  }, [op]);
+  }, [op, reduce]);
   return <Animated.View style={[{ height, width, borderRadius: 8, backgroundColor: t.surface2, opacity: op }, style]} />;
 }
 
@@ -481,17 +505,29 @@ export function Progress({ value, color, height = 8 }: { value: number; color?: 
   );
 }
 
+export function DemoMark({ force }: { force?: boolean }) {
+  const t = useTheme();
+  const ctx = useDemoMode();
+  const on = force !== undefined ? force : ctx;
+  if (!on) return null;
+  return (
+    <Text accessibilityLabel="Démo / Échantillon" style={{ color: t.accent, fontSize: 10 * t.fontScale, fontWeight: '800' }}>
+      Démo
+    </Text>
+  );
+}
+
 export function Stat({ label, value, sub, color, demo }: { label: string; value: string; sub?: string; color?: string; demo?: boolean }) {
   const t = useTheme();
   return (
     <View style={{ flexGrow: 1, flexBasis: 140, backgroundColor: t.surface, borderRadius: t.radius, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border, padding: 12, gap: 2 }}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <T v="caption" muted>
+        <T v="caption" muted style={{ flex: 1 }}>
           {label}
         </T>
-        {demo ? <Ionicons name="flask" size={12} color={t.accent} accessibilityLabel="Donnée de démonstration" /> : null}
+        <DemoMark force={demo} />
       </Row>
-      <T v="h1" color={color}>
+      <T v="h1" tabular color={color}>
         {value}
       </T>
       {sub ? (
@@ -508,7 +544,7 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable accessibilityLabel="Fermer" onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} />
+      <Pressable accessibilityLabel="Fermer" onPress={onClose} style={{ flex: 1, backgroundColor: alpha(t.bg, 0.55) }} />
       <View style={{ backgroundColor: t.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%', paddingBottom: insets.bottom + 12 }}>
         <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center' }}>
           <Row style={{ padding: 16, paddingBottom: 6, justifyContent: 'space-between' }}>
@@ -552,14 +588,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               paddingVertical: 10,
               paddingHorizontal: 14,
               borderRadius: 12,
-              backgroundColor: x.kind === 'error' ? t.danger : x.kind === 'success' ? t.success : t.dark ? '#f2f2f2' : '#1d1d1f',
+              backgroundColor: x.kind === 'error' ? t.danger : x.kind === 'success' ? t.success : t.toastBg,
               flexDirection: 'row',
               gap: 8,
               alignItems: 'center',
             }}
           >
-            <Ionicons name={x.kind === 'error' ? 'alert-circle' : x.kind === 'success' ? 'checkmark-circle' : 'information-circle'} size={18} color={x.kind === 'info' && t.dark ? '#111' : '#fff'} />
-            <Text style={{ color: x.kind === 'info' && t.dark ? '#111' : '#fff', fontWeight: '600' }}>{x.text}</Text>
+            <Ionicons
+              name={x.kind === 'error' ? 'alert-circle' : x.kind === 'success' ? 'checkmark-circle' : 'information-circle'}
+              size={18}
+              color={x.kind === 'error' ? t.onDanger : x.kind === 'success' ? t.onSuccess : t.toastFg}
+            />
+            <Text style={{ color: x.kind === 'error' ? t.onDanger : x.kind === 'success' ? t.onSuccess : t.toastFg, fontWeight: '600', flexShrink: 1 }}>{x.text}</Text>
           </View>
         ))}
       </View>
@@ -573,25 +613,19 @@ export function BootGate({ hydrate, children, appName, timeoutMs = 4000 }: { hyd
   const t = useTheme();
   const run = useCallback(() => {
     setState('loading');
-    let done = false;
-    const timer = setTimeout(() => {
-      if (!done) setState('fallback');
-    }, timeoutMs);
-    hydrate()
+    let alive = true;
+    withTimeout(hydrate(), timeoutMs)
       .then(() => {
-        done = true;
-        clearTimeout(timer);
-        setState('ready');
+        if (alive) setState('ready');
       })
       .catch(() => {
-        done = true;
-        clearTimeout(timer);
-        setState('fallback');
+        if (alive) setState('fallback');
       });
+    return () => {
+      alive = false;
+    };
   }, [hydrate, timeoutMs]);
-  useEffect(() => {
-    run();
-  }, [run]);
+  useEffect(() => run(), [run]);
 
   if (state === 'ready') return <>{children}</>;
   if (state === 'loading')
@@ -607,7 +641,7 @@ export function BootGate({ hydrate, children, appName, timeoutMs = 4000 }: { hyd
     );
   return (
     <View style={{ flex: 1, backgroundColor: t.bg, padding: 24, gap: 14, justifyContent: 'center', maxWidth: 520, width: '100%', alignSelf: 'center' }}>
-      <Banner kind="warning" title="Chargement plus long que prévu" text="Le stockage local ne répond pas. Vous pouvez réessayer ou continuer avec les données locales par défaut (hors ligne)." />
+      <Banner kind="warning" title="Chargement plus long que prévu" text="Le stockage local ne répond pas. Vous pouvez réessayer ou continuer avec les données en mémoire. Tant que le chargement n’a pas réussi, rien n’est réécrit sur les données déjà enregistrées." />
       <Button title="Réessayer" icon="refresh" onPress={run} />
       <Button title="Continuer hors ligne" kind="secondary" onPress={() => setState('ready')} />
     </View>

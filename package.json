@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -31,6 +32,8 @@
     "web": "expo start --web",
     "build:web": "expo export -p web && node scripts/pwa.mjs",
     "typecheck": "tsc --noEmit",
+    "test:store": "node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/store-guard.test.ts",
+    "e2e": "npm run test:store && node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/e2e-scenarios.ts",
     "serve:web": "node scripts/serve.mjs"
   },
   "private": true

@@ -32,7 +32,7 @@ export default function WOScreen() {
       <Row wrap gap={6}>
         <Badge label={w.status} color={statusColor(t, w.status)} />
         <Badge label={`Priorité ${w.priority}`} />
-        <Badge label={sla.label} color={sla.late ? t.danger : t.success} icon="timer" />
+        <Badge label={sla.label} color={sla.late ? t.dangerText : t.success} icon="timer" />
       </Row>
       <Card>
         <KV k="Site" v={`${siteOf(w.siteId)?.name} — ${siteOf(w.siteId)?.city}`} />

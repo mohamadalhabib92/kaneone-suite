@@ -60,7 +60,7 @@ export default function Mobilite() {
                 <T v="small" muted>
                   {m.legs[0] ? `${fmtDate(m.legs[0].date)} — ${baseOf(m.legs[0].baseId)?.name}` : ''}
                 </T>
-                {conflicts[m.id] ? <Badge label="Conflit véhicule" color={t.danger} icon="warning" /> : null}
+                {conflicts[m.id] ? <Badge label="Conflit véhicule" color={t.dangerText} icon="warning" /> : null}
               </Card>
             );
           })}

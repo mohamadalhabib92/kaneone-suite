@@ -34,7 +34,7 @@ export default function MissionScreen() {
         <Badge label={categoryOf(m.categoryId).label} />
         <Badge label={`${m.pax} pax`} />
       </Row>
-      {conflicts ? <Badge label={`Conflit : ${conflicts.map((v) => vehicleOf(v)?.label).join(', ')} déjà engagé le même jour`} color={t.danger} icon="warning" /> : null}
+      {conflicts ? <Badge label={`Conflit : ${conflicts.map((v) => vehicleOf(v)?.label).join(', ')} déjà engagé le même jour`} color={t.dangerText} icon="warning" /> : null}
       <T v="small" muted>
         {m.client}
       </T>
@@ -80,7 +80,7 @@ export default function MissionScreen() {
             ) : null}
             <Button title="Annuler la mission" kind="danger" icon="close" onPress={() => updateMission(m.id, { status: 'annulée' }, 'Mission annulée')} />
           </Row>
-          {next === 'confirmée' && conflicts ? <T v="small" color={t.danger}>Résolvez le conflit de véhicule avant de confirmer.</T> : null}
+          {next === 'confirmée' && conflicts ? <T v="small" color={t.dangerText}>Résolvez le conflit de véhicule avant de confirmer.</T> : null}
         </Card>
       ) : null}
       {m.report ? (

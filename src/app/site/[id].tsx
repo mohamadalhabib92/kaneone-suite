@@ -47,8 +47,8 @@ export default function SiteScreen() {
       </Card>
       <Row wrap gap={10}>
         <Stat label="CA 12 mois" value={fmtCompactEUR(site.revenueK * 1000)} demo />
-        <Stat label="EBITDA 12 mois" value={fmtCompactEUR(site.ebitdaK * 1000)} color={site.ebitdaK < 0 ? t.danger : t.primary} demo />
-        <Stat label="Marge EBITDA" value={margin === null ? '—' : `${fmtNumber(margin, 1)} %`} demo />
+        <Stat label="EBITDA 12 mois" value={fmtCompactEUR(site.ebitdaK * 1000)} color={site.ebitdaK < 0 ? t.dangerText : t.primary} demo />
+        <Stat label="Marge EBITDA" value={margin === null ? '—' : `${fmtNumber(margin, 1)} %`} color={margin !== null && margin < 0 ? t.dangerText : undefined} demo />
         <Stat label="Effectif" value={String(site.headcount)} demo />
         {site.occupancy ? <Stat label="Occupation" value={`${site.occupancy} %`} demo /> : null}
         <Stat label="OT ouverts" value={String(wos.filter((w) => w.status !== 'clôturé').length)} />

@@ -1,6 +1,7 @@
 import { createPersistedStore, uid } from '@/kit/store';
 import { isoDay } from '@/kit/format';
 import { BASES, COUNTRIES, FLEET, REQUIREMENTS, SEASONALITY, SITES, SPVS, type VehicleCategoryId } from '@/data/demo';
+import type { Density } from '@/theme';
 
 export type Role = 'admin' | 'cfo' | 'ops' | 'mobility' | 'portail';
 export const ROLES: { id: Role; label: string; sub: string; icon: string }[] = [
@@ -107,10 +108,16 @@ export type ReqStatus = 'ouvert' | 'en cours' | 'validé';
 export type Message = { id: string; at: number; from: string; text: string; tag?: string };
 export type PortalUser = { id: string; name: string; kind: 'famille' | 'partenaire'; access: string[] };
 export type SharedDoc = { id: string; title: string; at: number; kind: string };
+export type AccessEvent = { id: string; at: number; actor: string; action: string };
 
 export type State = {
   role?: Role;
   mode: 'demo' | 'real';
+  /** Réglage d’affichage. Champ ajouté : les données déjà stockées restent intactes. */
+  density: Density;
+  /** Identité démo du portail (pas un compte). */
+  portalActorId: string;
+  accessLog: AccessEvent[];
   wos: WorkOrder[];
   missions: Mission[];
   projects: Project[];
@@ -175,6 +182,9 @@ function initial(): State {
   return {
     role: undefined,
     mode: 'demo',
+    density: 'comfortable',
+    portalActorId: 'pu-1',
+    accessLog: [],
     woSeq: 4,
     missionSeq: 3,
     wos: [
@@ -231,6 +241,16 @@ export const store = createPersistedStore<State>('kaneone-suite', initial, 1);
 
 /* ---------------- Actions ---------------- */
 const who = () => roleLabel(store.get().role);
+
+/** Journal local append-only (démo). Ne remplace pas l’audit serveur de la Passe 2. */
+export function logAccess(action: string) {
+  store.set((s) => {
+    const actor =
+      s.role === 'portail' ? (s.portalUsers.find((u) => u.id === s.portalActorId)?.name ?? 'Portail (démo)') : roleLabel(s.role);
+    const entry: AccessEvent = { id: uid('al'), at: Date.now(), actor, action };
+    return { ...s, accessLog: [entry, ...(s.accessLog ?? [])].slice(0, 80) };
+  });
+}
 
 export function createWO(input: { title: string; siteId: string; equipmentId?: string; priority: Priority; kind?: WorkOrder['kind']; tag?: string }): string {
   const id = uid('wo');
@@ -303,8 +323,9 @@ export function missionConflicts(missions: Mission[]): Record<string, string[]> 
 }
 
 export function createProject(input: { name: string; siteId: string; budgetK: number; tag?: string }): string {
+  const spv = SPVS.find((x) => x.siteId === input.siteId);
+  if (!spv) return '';
   const id = uid('pr');
-  const spv = SPVS.find((x) => x.siteId === input.siteId)!;
   store.set((s) => ({
     ...s,
     projects: [
