@@ -59,7 +59,7 @@ Copiez `.env.example` en `.env`. Sans configuration, l’app reste entièrement 
 | `PORT` | Processus serveur | `YOUR_PORT` |
 | `EXPO_NO_CAPABILITY_SYNC` | Build iOS, pas de sync des capabilities | `1` |
 
-Équipe Apple conservée : `Y9XF9RY2BU`. Bundle `ch.mohamadba.kaneonesuite`. `baseUrl` web uniquement : `/kaneone-suite`.
+Équipe Apple conservée : `Y9XF9RY2BU`. Bundle `ch.mohamadba.kaneonesuite`. `baseUrl` web uniquement : `/kaneone-suite` (`app.json`, repris par `app.config.js`). Si `EAS_BUILD` est défini, `app.config.js` retire `experiments.baseUrl` pour ne pas l’embarquer dans un build natif.
 
 Flags forcés à `false` dans l’app : `FEATURE_AI`, `FEATURE_BANK_SYNC`, `FEATURE_ESIGN`, `FEATURE_PUSH`.
 

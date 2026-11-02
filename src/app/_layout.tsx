@@ -9,6 +9,7 @@ import { DemoModeProvider } from '@/kit/demo';
 import { usePrintMode, WebBaseline } from '@/kit/web';
 import { kane, kanePrint, withDensity, type Density } from '@/theme';
 import { figuresAreDemo } from '@/config';
+import { StorageNotices } from '@/components/storage-notices';
 import { store } from '@/state';
 
 export default function RootLayout() {
@@ -39,6 +40,7 @@ function AppFrame() {
     <ThemeProvider value={theme}>
       <DemoModeProvider value={figuresAreDemo(mode)}>
         <OfflineBadge text="Hors ligne — mode démo local, rien n’est perdu" />
+        <StorageNotices />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }} />
       </DemoModeProvider>
     </ThemeProvider>

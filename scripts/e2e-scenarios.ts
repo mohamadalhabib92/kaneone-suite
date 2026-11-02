@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { contrast } from '../src/kit/contrast';
@@ -76,6 +77,27 @@ if (app.expo.android?.package !== 'ch.mohamadba.kaneonesuite') fail('package and
 if (app.expo.ios?.appleTeamId !== 'Y9XF9RY2BU') fail('équipe Apple');
 if (app.expo.ios?.baseUrl) fail('baseUrl iOS interdit');
 if (app.expo.experiments?.baseUrl !== '/kaneone-suite') fail('baseUrl web');
+
+function loadAppConfig(easBuild: string | undefined) {
+  const env = { ...process.env };
+  if (easBuild === undefined) delete env.EAS_BUILD;
+  else env.EAS_BUILD = easBuild;
+  const script = `const cfg = require(${JSON.stringify(join(root, 'app.config.js'))}); const resolved = typeof cfg === 'function' ? cfg({}) : cfg; process.stdout.write(JSON.stringify(resolved));`;
+  const result = spawnSync(process.execPath, ['-e', script], { env, cwd: root, encoding: 'utf8' });
+  if (result.status !== 0) fail(result.stderr || 'app.config.js impossible à charger');
+  return JSON.parse(result.stdout) as typeof app;
+}
+
+const easConfig = loadAppConfig('1');
+if (easConfig.expo.experiments && Object.prototype.hasOwnProperty.call(easConfig.expo.experiments, 'baseUrl')) {
+  fail('experiments.baseUrl encore présent avec EAS_BUILD=1');
+}
+if (easConfig.expo.ios?.baseUrl) fail('baseUrl iOS sous EAS');
+if (easConfig.expo.ios?.bundleIdentifier !== 'ch.mohamadba.kaneonesuite') fail('bundle id sous EAS');
+if (easConfig.expo.android?.package !== 'ch.mohamadba.kaneonesuite') fail('package android sous EAS');
+const webConfig = loadAppConfig(undefined);
+if (webConfig.expo.experiments?.baseUrl !== '/kaneone-suite') fail('baseUrl web retiré hors EAS');
+if (webConfig.expo.ios?.baseUrl) fail('baseUrl iOS hors EAS');
 
 const banned = [/sk-[A-Za-z0-9]{8,}/, /BEGIN (?:RSA |OPENSSH |EC )?PRIVATE/, /EXPO_PUBLIC_OPENAI/, /EXPO_PUBLIC_EXAMPLE/, /ASC_API/];
 function walk(dir: string): string[] {

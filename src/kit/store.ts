@@ -13,6 +13,14 @@ export type PersistedStore<T> = {
   hydrate: () => Promise<void>;
   /** Efface le stockage. Renvoie false tant que le chargement n’a pas réussi (rien n’est supprimé). */
   reset: () => Promise<boolean>;
+  /** Vrai si une modification faite avant le chargement a été écartée au profit des données déjà enregistrées. */
+  offlineEditAbandoned: () => boolean;
+  useOfflineEditAbandoned: () => boolean;
+  /** Copie de secours d’un blob illisible, ou null si la copie a échoué. Undefined : pas d’incident. */
+  corruptBackupKey: () => string | null | undefined;
+  useCorruptBackupKey: () => string | null | undefined;
+  /** Écrit l’état initial sur la clé d’origine, seulement si la copie de secours est déjà en place. */
+  startFresh: () => Promise<boolean>;
   key: string;
 };
 
@@ -33,8 +41,14 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
    * enregistrées avec cet état vide.
    */
   let hydrated = false;
+  let offlineEdit = false;
+  let abandoned = false;
+  /** undefined : rien à signaler. null : illisible et copie impossible. string : clé de la copie. */
+  let corruptBackup: string | null | undefined;
 
   const emit = () => listeners.forEach((l) => l());
+  const snapshotAbandoned = () => abandoned;
+  const snapshotCorrupt = () => corruptBackup;
   const persist = () => {
     if (!hydrated) return;
     if (saveTimer) clearTimeout(saveTimer);
@@ -58,6 +72,7 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
     get: () => state,
     set: (updater) => {
       state = typeof updater === 'function' ? (updater as (p: T) => T)(state) : updater;
+      if (!hydrated) offlineEdit = true;
       emit();
       persist();
     },
@@ -66,15 +81,43 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
     hydrate: async () => {
       const raw = await storage.getItem(storageKey);
       if (raw) {
-        try {
-          state = { ...initial(), ...(JSON.parse(raw) as T) };
-        } catch {
-          /* blob illisible : on ne l’écrase pas et on n’autorise pas les écritures */
+        const parsed = parseObject(raw);
+        if (!parsed) {
+          corruptBackup = await copyCorrupt(storage, storageKey, raw);
+          emit();
           return;
         }
+        if (offlineEdit) abandoned = true;
+        state = { ...initial(), ...(parsed as T) };
+        offlineEdit = false;
+        hydrated = true;
+        emit();
+        return;
       }
       hydrated = true;
+      const keepSession = offlineEdit;
+      offlineEdit = false;
       emit();
+      if (keepSession) persist();
+    },
+    offlineEditAbandoned: snapshotAbandoned,
+    useOfflineEditAbandoned: () => useSyncExternalStore(subscribe, snapshotAbandoned, snapshotAbandoned),
+    corruptBackupKey: snapshotCorrupt,
+    useCorruptBackupKey: () => useSyncExternalStore(subscribe, snapshotCorrupt, snapshotCorrupt),
+    startFresh: async () => {
+      if (!corruptBackup) return false;
+      const backup = await storage.getItem(corruptBackup);
+      const original = await storage.getItem(storageKey);
+      if (backup == null || original == null || backup !== original) return false;
+      const fresh = initial();
+      await storage.setItem(storageKey, JSON.stringify(fresh));
+      state = fresh;
+      hydrated = true;
+      if (offlineEdit) abandoned = true;
+      offlineEdit = false;
+      corruptBackup = undefined;
+      emit();
+      return true;
     },
     reset: async () => {
       if (!hydrated) return false;
@@ -106,6 +149,35 @@ export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
       },
     );
   });
+}
+
+function parseObject(raw: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/** Copie le blob tel quel. N’écrit jamais sur la clé d’origine. */
+async function copyCorrupt(storage: Kv, storageKey: string, raw: string): Promise<string | null> {
+  const day = new Date().toISOString().slice(0, 10);
+  let backupKey = `${storageKey}.corrupt-${day}`;
+  try {
+    const existing = await storage.getItem(backupKey);
+    if (existing != null && existing !== raw) {
+      backupKey = `${storageKey}.corrupt-${new Date().toISOString().replace(/[:.]/g, '-')}`;
+    }
+    if (existing !== raw) {
+      await storage.setItem(backupKey, raw);
+      if ((await storage.getItem(backupKey)) !== raw) return null;
+    }
+    return backupKey;
+  } catch {
+    return null;
+  }
 }
 
 export function uid(prefix = ''): string {

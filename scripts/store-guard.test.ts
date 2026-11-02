@@ -70,12 +70,72 @@ async function main() {
 
   const corrupt = memory();
   await corrupt.setItem('guard-corrupt@v1', '###');
+  let originalWrites = 0;
+  const write = corrupt.setItem.bind(corrupt);
+  corrupt.setItem = async (key, value) => {
+    if (key === 'guard-corrupt@v1') originalWrites += 1;
+    return write(key, value);
+  };
   const broken = createPersistedStore('guard-corrupt', () => ({ marker: 'vide' }), 1, corrupt);
   await broken.hydrate();
+  if (originalWrites !== 0) fail('l’original a été écrit avant ou pendant la copie');
+  const backups = [...corrupt.data.keys()].filter((key) => key.startsWith('guard-corrupt@v1.corrupt-'));
+  if (backups.length !== 1) fail('copie de secours manquante : ' + [...corrupt.data.keys()].join(','));
+  if (corrupt.data.get(backups[0]) !== '###') fail('la copie n’est pas conforme');
+  if (corrupt.data.get('guard-corrupt@v1') !== '###') fail('le blob illisible a été écrasé');
+  if (broken.corruptBackupKey() !== backups[0]) fail('clé de copie non signalée');
   broken.set({ marker: 'ecrase' });
   if (await broken.reset()) fail('reset autorisé sur un blob illisible');
   await wait(250);
-  if (corrupt.data.get('guard-corrupt@v1') !== '###') fail('le blob illisible a été écrasé');
+  if (corrupt.data.get('guard-corrupt@v1') !== '###') fail('reset a écrasé l’original');
+  if (corrupt.data.get(backups[0]) !== '###') fail('la copie a changé');
+  if (!(await broken.startFresh())) fail('repartir de zéro refusé alors que la copie existe');
+  if (corrupt.data.get(backups[0]) !== '###') fail('repartir de zéro a modifié la copie');
+  const restarted = JSON.parse(corrupt.data.get('guard-corrupt@v1') || 'null') as { marker: string };
+  if (restarted.marker !== 'vide') fail('état initial absent après confirmation : ' + JSON.stringify(restarted));
+  if (broken.corruptBackupKey() !== undefined) fail('l’incident illisible est resté affiché');
+
+  const blocked = memory();
+  await blocked.setItem('guard-blocked@v1', '###');
+  const allow = blocked.setItem.bind(blocked);
+  blocked.setItem = async (key, value) => {
+    if (key.includes('.corrupt-')) throw new Error('copie impossible');
+    return allow(key, value);
+  };
+  const stuck = createPersistedStore('guard-blocked', () => ({ marker: 'vide' }), 1, blocked);
+  await stuck.hydrate();
+  if (stuck.corruptBackupKey() !== null) fail('une copie a été annoncée alors qu’elle a échoué');
+  if (blocked.data.get('guard-blocked@v1') !== '###') fail('échec de copie : original modifié');
+  if (await stuck.startFresh()) fail('repartir de zéro proposé sans copie');
+  if (blocked.data.get('guard-blocked@v1') !== '###') fail('startFresh a écrasé l’original sans copie');
+
+  const drop = memory();
+  const dropKey = 'guard-drop@v1';
+  const dropSaved = JSON.stringify({ marker: 'enregistre', n: 7 });
+  await drop.setItem(dropKey, dropSaved);
+  const releaseDrop = drop.hold(dropKey);
+  const dropped = createPersistedStore('guard-drop', () => ({ marker: 'vide', n: 0 }), 1, drop);
+  const dropPending = dropped.hydrate();
+  dropped.set({ marker: 'hors-ligne', n: 2 });
+  if (dropped.offlineEditAbandoned()) fail('abandon signalé trop tôt');
+  releaseDrop();
+  await dropPending;
+  if (!dropped.offlineEditAbandoned()) fail('modification hors ligne non signalée');
+  if (dropped.get().marker !== 'enregistre' || dropped.get().n !== 7) fail('les données enregistrées n’ont pas été restaurées');
+  await wait(250);
+  if (drop.data.get(dropKey) !== dropSaved) fail('l’abandon a réécrit le stockage');
+
+  const session = memory();
+  const releaseSession = session.hold('guard-session@v1');
+  const kept = createPersistedStore('guard-session', () => ({ marker: 'vide', n: 0 }), 1, session);
+  const sessionPending = kept.hydrate();
+  kept.set({ marker: 'session', n: 4 });
+  releaseSession();
+  await sessionPending;
+  if (kept.offlineEditAbandoned()) fail('session sans données préalables abandonnée à tort');
+  await wait(250);
+  const keptRaw = JSON.parse(session.data.get('guard-session@v1') || 'null') as { marker: string; n: number };
+  if (keptRaw.marker !== 'session' || keptRaw.n !== 4) fail('édition hors ligne perdue alors que le stockage était vide');
 
   const freshDisk = memory();
   const fresh = createPersistedStore('guard-fresh', () => ({ marker: 'vide', n: 0 }), 1, freshDisk);
