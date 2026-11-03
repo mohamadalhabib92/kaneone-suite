@@ -33,7 +33,8 @@ export function toCSV(rows: (string | number)[][]): string {
 /** Impression (→ PDF via le navigateur) sur web ; sur mobile : Phase 2 (expo-print). */
 export function printPage(): boolean {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    window.print();
+    window.dispatchEvent(new Event('kane-beforeprint'));
+    requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
     return true;
   }
   return false;

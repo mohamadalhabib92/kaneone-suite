@@ -13,10 +13,21 @@ export type Palette = {
   success: string;
   warning: string;
   danger: string;
+  /** Rouge lisible sur les surfaces sombres (texte et badges, AA). */
+  dangerText: string;
   info: string;
+  /** Texte posé sur les aplats danger, succès et alerte. */
+  onDanger: string;
+  onSuccess: string;
+  onWarning: string;
+  toastBg: string;
+  toastFg: string;
+  thumb: string;
   dark: boolean;
   radius: number;
   fontScale: number;
+  gap: number;
+  cardPad: number;
 };
 
 const Ctx = createContext<Palette | null>(null);

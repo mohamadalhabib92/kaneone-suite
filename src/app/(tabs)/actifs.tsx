@@ -5,7 +5,7 @@ import { useTheme } from '@/kit/theme';
 import { Badge, Card, Chip, EmptyState, Button, Row, Screen, Stat, T, Ionicons, type IconName } from '@/kit/ui';
 import { fmtCompactEUR } from '@/kit/format';
 import { ASSETS, ASSET_TYPE, COUNTRIES, SITE_STATUS, SPVS, countryOf, siteOf, spvOf, type AssetType, type CountryId, type SiteStatus } from '@/data/demo';
-import { DemoNotice, TabHeader, statusColor } from '@/components/common';
+import { DemoNotice, Figure, TabHeader, statusColor } from '@/components/common';
 
 const TYPE_ICON: Record<AssetType, IconName> = { immobilier: 'business', mobilite: 'car-sport', autre: 'cube' };
 
@@ -76,7 +76,7 @@ export default function Actifs() {
                   </T>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <T style={{ fontWeight: '700' }}>{fmtCompactEUR(a.valueK * 1000)}</T>
+                  <Figure amount={a.valueK * 1000} text={fmtCompactEUR(a.valueK * 1000)} />
                   <Badge label={SITE_STATUS[a.status]} color={statusColor(t, a.status)} />
                 </View>
               </Row>

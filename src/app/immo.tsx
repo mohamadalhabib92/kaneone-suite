@@ -5,9 +5,19 @@ import { Badge, Button, Card, Chip, EmptyState, Field, Progress, Row, Screen, Sh
 import { fmtCompactEUR } from '@/kit/format';
 import { SITES, countryOf, siteOf, spvOf } from '@/data/demo';
 import { can, createProject, store } from '@/state';
+import { ScreenBoundary } from '@/kit/error-boundary';
+import { DemoMark } from '@/kit/ui';
 import { BackHeader, DemoNotice, NeedPerm } from '@/components/common';
 
 export default function Immo() {
+  return (
+    <ScreenBoundary title="Kane Immo" allowBack>
+      <ImmoBody />
+    </ScreenBoundary>
+  );
+}
+
+function ImmoBody() {
   const t = useTheme();
   const router = useRouter();
   const toast = useToast();
@@ -28,7 +38,17 @@ export default function Immo() {
       </Row>
       <NeedPerm perm="immo.manage" what="créer ou faire avancer des projets" />
       {can(s.role, 'immo.manage') ? <Button title="Nouveau projet" icon="add" full onPress={() => setOpen(true)} /> : null}
-      {s.projects.length === 0 ? <EmptyState icon="business" title="Aucun projet" /> : null}
+      <T v="small" muted>
+        Alerte de dépassement : YOUR_BUDGET_ALERT_PCT — à valider. Tant que ce seuil n’est pas fixé, seul un engagé supérieur au budget est signalé.
+      </T>
+      {s.projects.length === 0 ? (
+        <EmptyState
+          icon="business"
+          title="Aucun projet"
+          text="Créez un projet lié à un site et à sa SPV, ou lancez le scénario Taghazout."
+          action={can(s.role, 'immo.manage') ? <Button title="Nouveau projet" icon="add" onPress={() => setOpen(true)} /> : <Button title="Voir les scénarios" kind="secondary" icon="play" onPress={() => router.push('/scenarios')} />}
+        />
+      ) : null}
       {s.projects.map((p) => {
         const cur = p.phases.find((x) => x.status === 'en cours');
         const done = p.phases.filter((x) => x.status === 'terminée').length;
@@ -42,10 +62,11 @@ export default function Immo() {
             <T v="small" muted>
               {site ? `${countryOf(site.countryId).flag} ${site.city}` : ''} · {spvOf(p.spvId)?.name}
             </T>
-            <Progress value={done / p.phases.length} />
-            <T v="caption" muted>
-              {done}/{p.phases.length} phases · budget {fmtCompactEUR(p.budgetK * 1000)} · engagé {fmtCompactEUR(p.spentK * 1000)}
+            <Progress value={p.phases.length ? done / p.phases.length : 0} color={p.spentK > p.budgetK ? t.danger : t.primary} />
+            <T v="small" color={p.spentK > p.budgetK ? t.dangerText : t.textMuted}>
+              {p.spentK > p.budgetK ? `Dépassement de ${fmtCompactEUR((p.spentK - p.budgetK) * 1000)}` : 'Dans le budget'} · {done}/{p.phases.length} phases · budget {fmtCompactEUR(p.budgetK * 1000)} · engagé {fmtCompactEUR(p.spentK * 1000)}
             </T>
+            <DemoMark />
           </Card>
         );
       })}
@@ -67,6 +88,10 @@ export default function Immo() {
           disabled={!name.trim() || !(Number(budget) > 0)}
           onPress={() => {
             const id = createProject({ name: name.trim(), siteId: site, budgetK: Number(budget) });
+            if (!id) {
+              toast('Ce site n’a pas de SPV — projet non créé', 'error');
+              return;
+            }
             setOpen(false);
             setName('');
             toast('Projet créé', 'success');

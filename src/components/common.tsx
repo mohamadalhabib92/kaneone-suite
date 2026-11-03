@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme, alpha } from '@/kit/theme';
-import { Banner, Button, Chip, DemoBadge, Header, IconButton, Row, T } from '@/kit/ui';
+import { Banner, Button, Chip, DemoBadge, DemoMark, Header, IconButton, Row, T } from '@/kit/ui';
 import { can, roleLabel, store, type Perm } from '@/state';
 
 export function BackHeader({ title, subtitle, right }: { title: string; subtitle?: string; right?: React.ReactNode }) {
@@ -79,23 +79,48 @@ export function Bars({ data, format, color }: { data: { label: string; value: nu
   );
 }
 
-export function KV({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
+export function KV({ k, v, strong, amount }: { k: string; v: string; strong?: boolean; amount?: number }) {
+  const t = useTheme();
+  const neg = typeof amount === 'number' && amount < 0;
   return (
-    <Row style={{ justifyContent: 'space-between', paddingVertical: 4 }}>
+    <Row style={{ justifyContent: 'space-between', paddingVertical: 4, alignItems: 'flex-start' }}>
       <T v="small" muted style={{ flex: 1 }}>
         {k}
       </T>
-      <T v="small" style={{ fontWeight: strong ? '800' : '600', textAlign: 'right', flexShrink: 1 }}>
-        {v}
-      </T>
+      <View style={{ alignItems: 'flex-end', flexShrink: 1, maxWidth: '62%' }}>
+        <T
+          v="small"
+          tabular
+          color={neg ? t.dangerText : t.text}
+          accessibilityLabel={neg ? `${v}, négatif` : v}
+          style={{ fontWeight: strong ? '800' : '600', textAlign: 'right' }}
+        >
+          {v}
+        </T>
+        {typeof amount === 'number' ? <DemoMark /> : null}
+      </View>
     </Row>
+  );
+}
+
+/** Montant : signe « − », rouge lisible, et badge Démo. Le signe porte l’information, pas seulement la couleur. */
+export function Figure({ amount, text }: { amount: number; text: string }) {
+  const t = useTheme();
+  const neg = amount < 0;
+  return (
+    <View style={{ alignItems: 'flex-end', gap: 2 }}>
+      <T v="small" tabular color={neg ? t.dangerText : t.text} accessibilityLabel={neg ? `${text}, négatif, démonstration` : `${text}, démonstration`} style={{ fontWeight: '700' }}>
+        {text}
+      </T>
+      <DemoMark />
+    </View>
   );
 }
 
 export function statusColor(t: ReturnType<typeof useTheme>, s: string): string {
   if (['clôturé', 'terminée', 'validé', 'validée', 'actif', 'résolu'].includes(s)) return t.success;
   if (['en cours', 'assigné', 'confirmée', 'travaux'].includes(s)) return t.info;
-  if (['escaladé', 'critique', 'élevé'].includes(s)) return t.danger;
+  if (['escaladé', 'critique', 'élevé'].includes(s)) return t.dangerText;
   if (['haute', 'pause', 'moyen'].includes(s)) return t.warning;
   return t.textMuted;
 }

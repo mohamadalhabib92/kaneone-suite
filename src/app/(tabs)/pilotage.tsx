@@ -9,7 +9,7 @@ import { COUNTRIES, GROUP, SEASONALITY, SITES, SITE_STATUS, countryOf, siteOf, t
 import { monthlyEbitdaSeries } from '@/lib/finance';
 import { SCENARIOS, scenarioProgress } from '@/lib/scenarios';
 import { closePeriod, store } from '@/state';
-import { Bars, DemoNotice, TabHeader, statusColor } from '@/components/common';
+import { Bars, DemoNotice, Figure, TabHeader, statusColor } from '@/components/common';
 
 export default function Pilotage() {
   const t = useTheme();
@@ -43,7 +43,7 @@ export default function Pilotage() {
         <Stat label="EBITDA cumulé 12 mois" value={fmtCompactEUR(GROUP.ebitdaK * 1000)} sub="Démo / Échantillon" demo color={t.primary} />
         <Stat label="Sites actifs" value={`${GROUP.activeSites}/${GROUP.sites}`} sub={`${COUNTRIES.length} pays`} demo />
         <Stat label="Effectif" value={fmtNumber(GROUP.headcount)} sub="agrégat démo" demo />
-        <Stat label="OT ouverts" value={String(openWOs.length)} sub={critical.length ? `${critical.length} critique(s)/escaladé(s)` : 'aucun critique'} color={critical.length ? t.danger : undefined} />
+        <Stat label="OT ouverts" value={String(openWOs.length)} sub={critical.length ? `${critical.length} critique(s)/escaladé(s)` : 'aucun critique'} color={critical.length ? t.dangerText : undefined} />
       </Row>
 
       <Card>
@@ -53,7 +53,7 @@ export default function Pilotage() {
         </Row>
         <Bars data={series} format={(n) => fmtCompactEUR(n)} />
         <T v="small" muted>
-          Total {fmtCompactEUR(series.reduce((a, d) => a + d.value, 0))} — répartition saisonnière illustrative.
+          Démo / Échantillon — total {fmtCompactEUR(series.reduce((a, d) => a + d.value, 0))}. Répartition saisonnière illustrative. Les montants négatifs portent le signe « − ».
         </T>
       </Card>
 
@@ -75,9 +75,7 @@ export default function Pilotage() {
               onPress={() => router.push(`/site/${x.id}`)}
               right={
                 <View style={{ alignItems: 'flex-end', gap: 2 }}>
-                  <T v="small" style={{ fontWeight: '700' }} color={x.ebitdaK < 0 ? t.danger : t.text}>
-                    {fmtCompactEUR(x.ebitdaK * 1000)}
-                  </T>
+                  <Figure amount={x.ebitdaK * 1000} text={fmtCompactEUR(x.ebitdaK * 1000)} />
                   <T v="caption" color={statusColor(t, x.status)}>
                     {SITE_STATUS[x.status]}
                   </T>

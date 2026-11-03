@@ -36,11 +36,11 @@ export default function AssetScreen() {
       </Row>
       <Card>
         <T>{a.description}</T>
-        <KV k="Valeur d’acquisition (démo)" v={fmtCompactEUR(a.valueK * 1000)} strong />
+        <KV k="Valeur d’acquisition (démo)" v={fmtCompactEUR(a.valueK * 1000)} amount={a.valueK * 1000} strong />
         <KV k="Acquis en" v={fmtDate(new Date(y, m - 1, 1)).replace(/^1 /, '')} />
         <KV k="SPV propriétaire" v={spv.name} />
         <KV k="Détention groupe" v={`${spv.ownership} %`} />
-        <KV k="Quote-part groupe (démo)" v={fmtCompactEUR((a.valueK * 1000 * spv.ownership) / 100)} />
+        <KV k="Quote-part groupe (démo)" v={fmtCompactEUR((a.valueK * 1000 * spv.ownership) / 100)} amount={(a.valueK * 1000 * spv.ownership) / 100} />
         <KV k="Pays / devise" v={`${c.name} · ${c.currency}`} />
         <KV k="Site" v={site.name} />
       </Card>

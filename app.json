@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ch.mohamadba.kaneonesuite",
+      "appleTeamId": "Y9XF9RY2BU",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
