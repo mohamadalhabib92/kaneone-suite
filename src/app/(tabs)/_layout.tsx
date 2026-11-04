@@ -2,10 +2,12 @@ import React from 'react';
 import type { ColorValue } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@/kit/ui';
-import { kane } from '@/theme';
+import { useTheme } from '@/kit/theme';
+import { haptic } from '@/kit/haptics';
 import { can, store } from '@/state';
 
 export default function TabsLayout() {
+  const t = useTheme();
   const role = store.useSelect((s) => s.role);
   if (!role) return <Redirect href="/welcome" />;
   const internal = can(role, 'internal');
@@ -16,11 +18,12 @@ export default function TabsLayout() {
     };
   return (
     <Tabs
+      screenListeners={{ tabPress: () => haptic.select() }}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: kane.primary,
-        tabBarInactiveTintColor: kane.textMuted,
-        tabBarStyle: { backgroundColor: kane.surface, borderTopColor: kane.border, minHeight: 60 },
+        tabBarActiveTintColor: t.primary,
+        tabBarInactiveTintColor: t.textMuted,
+        tabBarStyle: { backgroundColor: t.surface, borderTopColor: t.border, minHeight: 60, elevation: 0, shadowOpacity: 0 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >

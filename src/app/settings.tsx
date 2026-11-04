@@ -7,11 +7,13 @@ import { isConfigured, maskValue } from '@/kit/config';
 import { CONFIG, DECISIONS, FLAGS, dbReady } from '@/config';
 import { ROLES, can, roleLabel, store } from '@/state';
 import { BackHeader } from '@/components/common';
+import { haptic, setHapticsEnabled, useHapticsEnabled } from '@/kit/haptics';
 
 export default function Settings() {
   const t = useTheme();
   const router = useRouter();
   const toast = useToast();
+  const vibrations = useHapticsEnabled();
   const s = store.use();
   const missing = CONFIG.filter((c) => !isConfigured(c.value));
   const confirmReset = () => {
@@ -46,6 +48,26 @@ export default function Settings() {
             value={s.mode === 'real' && dbReady()}
             disabled={!dbReady()}
             onChange={(v) => store.set((x) => ({ ...x, mode: v ? 'real' : 'demo' }))}
+          />
+        </Card>
+      </Section>
+      <Section title="Apparence">
+        <Row wrap gap={6}>
+          <Chip label="Système" selected={(s.appearance ?? 'system') === 'system'} onPress={() => store.set((x) => ({ ...x, appearance: 'system' }))} />
+          <Chip label="Sombre" selected={s.appearance === 'dark'} onPress={() => store.set((x) => ({ ...x, appearance: 'dark' }))} />
+          <Chip label="Clair" selected={s.appearance === 'light'} onPress={() => store.set((x) => ({ ...x, appearance: 'light' }))} />
+        </Row>
+      </Section>
+      <Section title="Confort et accessibilité">
+        <Card>
+          <ToggleRow
+            label="Vibrations"
+            sub="Retour tactile lors des validations et des actions."
+            value={vibrations}
+            onChange={(on) => {
+              setHapticsEnabled(on);
+              if (on) haptic.select();
+            }}
           />
         </Card>
       </Section>

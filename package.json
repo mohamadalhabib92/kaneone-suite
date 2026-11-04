@@ -9,6 +9,7 @@
     "@react-native-community/netinfo": "12.0.1",
     "expo": "~58.0.19",
     "expo-constants": "~58.0.13",
+    "expo-haptics": "~58.0.7",
     "expo-linking": "~58.0.14",
     "expo-router": "~58.0.26",
     "expo-status-bar": "~58.0.4",
@@ -33,7 +34,7 @@
     "build:web": "expo export -p web && node scripts/pwa.mjs",
     "typecheck": "tsc --noEmit",
     "test:store": "node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/store-guard.test.ts",
-    "e2e": "npm run test:store && node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/e2e-scenarios.ts",
+    "e2e": "npm run test:store && node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/e2e-scenarios.ts && node scripts/a11y-scan.mjs src",
     "serve:web": "node scripts/serve.mjs"
   },
   "private": true
