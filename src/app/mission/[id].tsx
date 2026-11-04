@@ -7,11 +7,13 @@ import { fmtDate, fmtDateTime } from '@/kit/format';
 import { baseOf, categoryOf, countryOf, vehicleOf } from '@/data/demo';
 import { MISSION_FLOW, can, missionConflicts, store, updateMission } from '@/state';
 import { BackHeader, DemoNotice, NeedPerm, statusColor } from '@/components/common';
+import { useCelebrate } from '@/kit/premium';
 
 export default function MissionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const toast = useToast();
+  const celebrate = useCelebrate();
   const s = store.use();
   const m = s.missions.find((x) => x.id === id);
   const [report, setReport] = useState('');
@@ -74,7 +76,8 @@ export default function MissionScreen() {
                 disabled={next === 'confirmée' && !!conflicts}
                 onPress={() => {
                   updateMission(m.id, { status: next, report: next === 'terminée' ? report.trim() || 'RAS' : m.report }, `Statut → ${next}`);
-                  toast(`Mission ${next}`, 'success');
+                  if (next === 'terminée') celebrate({ title: 'Mission terminée', sub: m.ref, icon: 'flag' });
+                  else toast(`Mission ${next}`, 'success');
                 }}
               />
             ) : null}

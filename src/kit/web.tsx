@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { kane } from '@/theme';
 
 /** Focus visible (web) et respect de « réduire les animations ». */
-export function WebBaseline() {
+export function WebBaseline({ color = kane.primary }: { color?: string } = {}) {
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     const id = 'kane-baseline';
@@ -14,10 +14,10 @@ export function WebBaseline() {
       document.head.appendChild(style);
     }
     style.textContent = [
-      `*:focus-visible{outline:2px solid ${kane.primary};outline-offset:2px;}`,
+      `*:focus-visible{outline:2px solid ${color};outline-offset:2px;}`,
       '@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;}}',
     ].join('');
-  }, []);
+  }, [color]);
   return null;
 }
 

@@ -7,11 +7,13 @@ import { fmtDateTime } from '@/kit/format';
 import { PEOPLE, equipmentOf, personOf, siteOf } from '@/data/demo';
 import { assignWO, can, closeWO, escalateWO, resolveWO, slaState, startWO, store } from '@/state';
 import { BackHeader, DemoNotice, KV, NeedPerm, statusColor } from '@/components/common';
+import { useCelebrate } from '@/kit/premium';
 
 export default function WOScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useTheme();
   const toast = useToast();
+  const celebrate = useCelebrate();
   const s = store.use();
   const w = s.wos.find((x) => x.id === id);
   const [note, setNote] = useState('');
@@ -66,7 +68,7 @@ export default function WOScreen() {
                 kind="success"
                 onPress={() => {
                   closeWO(w.id);
-                  toast('OT clôturé', 'success');
+                  celebrate({ title: 'OT clôturé', sub: w.ref, icon: 'lock-closed' });
                 }}
               />
             ) : null}

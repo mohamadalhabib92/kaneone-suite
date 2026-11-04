@@ -1,7 +1,7 @@
 import { createPersistedStore, uid } from '@/kit/store';
 import { isoDay } from '@/kit/format';
 import { BASES, COUNTRIES, FLEET, REQUIREMENTS, SEASONALITY, SITES, SPVS, type VehicleCategoryId } from '@/data/demo';
-import type { Density } from '@/theme';
+import type { AppearancePref, Density } from '@/theme';
 
 export type Role = 'admin' | 'cfo' | 'ops' | 'mobility' | 'portail';
 export const ROLES: { id: Role; label: string; sub: string; icon: string }[] = [
@@ -115,6 +115,8 @@ export type State = {
   mode: 'demo' | 'real';
   /** Réglage d’affichage. Champ ajouté : les données déjà stockées restent intactes. */
   density: Density;
+  /** Apparence : suit le système par défaut. Champ optionnel, données existantes intactes. */
+  appearance?: AppearancePref;
   /** Identité démo du portail (pas un compte). */
   portalActorId: string;
   accessLog: AccessEvent[];

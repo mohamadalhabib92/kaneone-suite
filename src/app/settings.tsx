@@ -49,6 +49,13 @@ export default function Settings() {
           />
         </Card>
       </Section>
+      <Section title="Apparence">
+        <Row wrap gap={6}>
+          <Chip label="Système" selected={(s.appearance ?? 'system') === 'system'} onPress={() => store.set((x) => ({ ...x, appearance: 'system' }))} />
+          <Chip label="Sombre" selected={s.appearance === 'dark'} onPress={() => store.set((x) => ({ ...x, appearance: 'dark' }))} />
+          <Chip label="Clair" selected={s.appearance === 'light'} onPress={() => store.set((x) => ({ ...x, appearance: 'light' }))} />
+        </Row>
+      </Section>
       <Section title="Densité">
         <Row wrap gap={6}>
           <Chip label="Confortable" selected={(s.density ?? 'comfortable') === 'comfortable'} onPress={() => store.set((x) => ({ ...x, density: 'comfortable' }))} />

@@ -5,6 +5,7 @@ import { useTheme, alpha } from '@/kit/theme';
 import { Banner, Card, DemoBadge, Ionicons, Row, Screen, T, type IconName } from '@/kit/ui';
 import { ROLES, store } from '@/state';
 import { dbReady } from '@/config';
+import { FadeIn, Pop } from '@/kit/premium';
 
 export default function Welcome() {
   const t = useTheme();
@@ -12,11 +13,13 @@ export default function Welcome() {
   return (
     <Screen>
       <View style={{ alignItems: 'center', gap: 8, paddingTop: 24 }}>
-        <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: alpha(t.primary, 0.14), borderWidth: 2, borderColor: t.primary, alignItems: 'center', justifyContent: 'center' }}>
-          <T v="h1" color={t.text}>
-            K1
-          </T>
-        </View>
+        <Pop>
+          <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: alpha(t.primary, 0.14), borderWidth: 2, borderColor: t.primary, alignItems: 'center', justifyContent: 'center' }}>
+            <T v="h1" color={t.text}>
+              K1
+            </T>
+          </View>
+        </Pop>
         <T v="display" center>
           KaneOne Suite
         </T>
@@ -35,9 +38,9 @@ export default function Welcome() {
       <T v="label" muted>
         Entrer avec le rôle…
       </T>
-      {ROLES.map((r) => (
+      {ROLES.map((r, i) => (
+        <FadeIn key={r.id} index={i}>
         <Card
-          key={r.id}
           a11y={`Entrer en tant que ${r.label}`}
           onPress={() => {
             store.set((s) => ({ ...s, role: r.id }));
@@ -57,6 +60,7 @@ export default function Welcome() {
             <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
           </Row>
         </Card>
+        </FadeIn>
       ))}
       <T v="small" muted center>
         Démo : le choix du rôle remplace la connexion. En production, le rôle provient du compte (politiques RLS).

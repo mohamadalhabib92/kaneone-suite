@@ -8,6 +8,7 @@ import { buildLiasse } from '@/lib/finance';
 import { CLOSE_STEPS, can, closePeriod, closeStep, store } from '@/state';
 import { BackHeader, DemoNotice, NeedPerm } from '@/components/common';
 import { LiasseTable } from './(tabs)/finance';
+import { useCelebrate } from '@/kit/premium';
 
 export function exportLiasse(period: string) {
   const { lines, total } = buildLiasse(store.get().entries, period);
@@ -25,6 +26,7 @@ export function exportLiasse(period: string) {
 export default function CloseScreen() {
   const t = useTheme();
   const toast = useToast();
+  const celebrate = useCelebrate();
   const s = store.use();
   const period = closePeriod();
   const c = s.closes[period];
@@ -35,7 +37,8 @@ export default function CloseScreen() {
   const run = async (i: number) => {
     if (i === 5) await exportLiasse(period);
     closeStep(period, i);
-    toast(i === 5 ? `Période ${period} verrouillée` : `Étape ${i + 1} terminée`, 'success');
+    if (i === 5) celebrate({ title: `Période ${period} verrouillée`, icon: 'lock-closed' });
+    else toast(`Étape ${i + 1} terminée`, 'success');
   };
   return (
     <Screen header={<BackHeader title={`Clôture ${period}`} subtitle="Clôture mensuelle guidée — rôle CFO" />}>
