@@ -1,13 +1,15 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { contrast } from '../src/kit/contrast';
+import { kitPairs } from '../src/kit/a11yPairs';
+import { contrast, ensureContrast, mix } from '../src/kit/contrast';
+import { createVibrationPref } from '../src/kit/vibrations';
 import { reportCrash, recentCrashes } from '../src/kit/crash';
 import { FLAGS } from '../src/config';
 import { BASES, COUNTRIES, DOSSIER_MODULES, FINANCE_REPOS, GROUP, REQUIREMENTS, SITES, VEHICLE_CATEGORIES } from '../src/data/demo';
 import { SCENARIOS, scenarioProgress } from '../src/lib/scenarios';
 import { store } from '../src/state';
-import { kane, kanePrint } from '../src/theme';
+import { kane, kaneDay, kanePrint } from '../src/theme';
 
 function fail(message: string): never {
   throw new Error(message);
@@ -48,6 +50,57 @@ for (const [label, fg, bg] of pairs) {
   const ratio = contrast(fg, bg);
   if (ratio < 4.5) fail(`${label} : contraste ${ratio.toFixed(2)} < 4.5`);
 }
+
+// Accessibilité : tous les couples dessinés par le kit, sombre (kane), jour (kaneDay) et impression.
+const a11yFailures: string[] = [];
+for (const [name, p] of [['sombre', kane], ['jour', kaneDay], ['impression', kanePrint]] as const) {
+  const chip = (c: string) => ensureContrast(ensureContrast(c, mix(c, p.surface, 0.16), p.text), mix(c, p.bg, 0.16), p.text);
+  const kit = kitPairs(p, name, {
+    buttons: [
+      ['principal', p.primaryText, p.primary],
+      ['danger', p.onDanger, p.danger],
+      ['succès', p.onSuccess, p.success],
+    ],
+    ghostInk: p.primary,
+    chipInk: chip,
+    badgeInk: (c) => ensureContrast(c, mix(c, p.surface, 0.15), p.text),
+    badgeColors: [
+      ['succès', p.success],
+      ['alerte', p.warning],
+      ['info', p.info],
+      ['rouge', p.dangerText],
+      ['or', p.accent],
+      ['primaire', p.primary],
+    ],
+    toast: { bg: p.toastBg, fg: p.toastFg },
+    fieldError: p.dangerText,
+    emptyInk: p.primary, // inkOf(t) du kit
+  });
+  for (const [label, fg, bg, min] of kit) {
+    const r = contrast(fg, bg);
+    if (r < min) a11yFailures.push(`${label} : ${r.toFixed(2)} < ${min}`);
+  }
+}
+if (a11yFailures.length) fail('Contraste insuffisant :\n' + a11yFailures.join('\n'));
+
+// Réglage « Vibrations » : activé par défaut, clé dédiée, aucune donnée touchée.
+const VIBRATIONS_KEY = 'kaneone-suite:vibrations@v1';
+if (!readFileSync(join(root, 'src/kit/haptics.ts'), 'utf8').includes(`'${VIBRATIONS_KEY}'`)) fail('clé vibrations modifiée');
+void (async () => {
+  const mem = new Map<string, string>([['kaneone-suite@v1', '{}']]);
+  const pref = createVibrationPref(
+    { getItem: async (k: string) => mem.get(k) ?? null, setItem: async (k: string, v: string) => void mem.set(k, v) },
+    VIBRATIONS_KEY,
+  );
+  await pref.hydrate();
+  if (!pref.get()) fail('vibrations désactivées par défaut');
+  pref.set(false);
+  await new Promise((r) => setTimeout(r, 0));
+  if (mem.get(VIBRATIONS_KEY) !== 'off' || mem.get('kaneone-suite@v1') !== '{}' || mem.size !== 2) fail('vibrations : stockage inattendu');
+})().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
 
 let fetchCalled = false;
 globalThis.fetch = () => {
@@ -118,3 +171,4 @@ for (const re of banned) if (re.test(envExample)) fail(`.env.example ${re}`);
 if (!envExample.includes('YOUR_SENTRY_DSN') || !envExample.includes('EXPO_NO_CAPABILITY_SYNC=1')) fail('env example incomplet');
 
 console.log(`Passe 1 : ${SCENARIOS.length}/${SCENARIOS.length} scénarios, contraste AA, stockage ${store.key}`);
+console.log('Accessibilité : contraste AA du kit (sombre, jour, impression), vibrations activées par défaut');

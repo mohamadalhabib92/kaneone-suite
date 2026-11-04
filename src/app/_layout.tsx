@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -10,12 +10,17 @@ import { DemoModeProvider } from '@/kit/demo';
 import { usePrintMode, WebBaseline } from '@/kit/web';
 import { kanePrint, paletteFor, withDensity, type Density } from '@/theme';
 import { DelightProvider } from '@/kit/premium';
+import { hydrateHaptics } from '@/kit/haptics';
 import { figuresAreDemo } from '@/config';
 import { StorageNotices } from '@/components/storage-notices';
 import { store } from '@/state';
 
 export default function RootLayout() {
   const hydrate = useCallback(() => store.hydrate(), []);
+  useEffect(() => {
+    // Préférence « Vibrations » (clé dédiée, activée par défaut).
+    void hydrateHaptics();
+  }, []);
   // Avant hydratation, on suit seulement l’apparence système.
   const scheme = useColorScheme();
   return (

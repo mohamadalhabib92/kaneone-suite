@@ -34,7 +34,7 @@
     "build:web": "expo export -p web && node scripts/pwa.mjs",
     "typecheck": "tsc --noEmit",
     "test:store": "node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/store-guard.test.ts",
-    "e2e": "npm run test:store && node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/e2e-scenarios.ts",
+    "e2e": "npm run test:store && node --require ./scripts/mock-rn.cjs ./node_modules/tsx/dist/cli.mjs scripts/e2e-scenarios.ts && node scripts/a11y-scan.mjs src",
     "serve:web": "node scripts/serve.mjs"
   },
   "private": true
