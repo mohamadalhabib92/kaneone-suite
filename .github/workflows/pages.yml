@@ -24,6 +24,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run e2e
       - run: npx tsc --noEmit
       - name: Export web + PWA (baseUrl /kaneone-suite)
         run: npm run build:web
