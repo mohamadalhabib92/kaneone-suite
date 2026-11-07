@@ -12,6 +12,7 @@ import { useSyncExternalStore } from 'react';
  * de l’appareil.
  */
 export type DestructiveAction = 'reset' | 'replace-unreadable';
+export type SchemaHold = 'unreadable' | 'future';
 
 export type PersistedStore<T> = {
   get: () => T;
@@ -44,6 +45,9 @@ export type PersistedStore<T> = {
   commitDestructive: () => Promise<boolean>;
   /** Lit la copie de quarantaine seulement si elle est encore identique à l’original. Ne l’affiche pas. */
   readQuarantine: () => Promise<string | null>;
+  /** Document laissé tel quel : illisible, ou version de schéma non prise en charge. */
+  schemaHold: () => SchemaHold | undefined;
+  useSchemaHold: () => SchemaHold | undefined;
   key: string;
 };
 
@@ -54,8 +58,10 @@ type Kv = {
 };
 
 /**
- * Conserve chaque clé déjà présente (y compris un schéma futur ou inconnu).
+ * Document de cette version : conserve chaque clé déjà présente.
  * N’ajoute un défaut que pour une clé absente. Ne régénère pas les identifiants stockés.
+ * Un `schemaVersion` supérieur à la version prise en charge n’entre pas ici :
+ * il reste en quarantaine, octet pour octet.
  */
 export function mergeStored<T extends object>(stored: Record<string, unknown>, fallback: T): T {
   const merged: Record<string, unknown> = {};
@@ -65,6 +71,12 @@ export function mergeStored<T extends object>(stored: Record<string, unknown>, f
     if (!Object.prototype.hasOwnProperty.call(stored, key)) merged[key] = base[key];
   }
   return merged as T;
+}
+
+/** Vrai seulement si le document annonce une version de schéma plus récente que celle lue par ce store. */
+export function isFutureSchema(parsed: Record<string, unknown>, supported: number): boolean {
+  const marker = parsed.schemaVersion;
+  return typeof marker === 'number' && Number.isFinite(marker) && marker > supported;
 }
 
 export function createPersistedStore<T extends object>(key: string, initial: () => T, version = 1, storage: Kv = AsyncStorage): PersistedStore<T> {
@@ -80,8 +92,9 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
   let hydrated = false;
   let offlineEdit = false;
   let abandoned = false;
-  /** undefined : rien à signaler. null : illisible et copie impossible. string : clé de la copie. */
+  /** undefined : rien à signaler. null : copie impossible. string : clé de la copie. */
   let corruptBackup: string | null | undefined;
+  let hold: SchemaHold | undefined;
   let generation = 0;
   let failed = false;
   let busy = false;
@@ -94,10 +107,11 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
   const snapshotUnsaved = () => failed;
   const snapshotWriting = () => busy || saveTimer != null;
   const snapshotArmed = () => armed;
+  const snapshotHold = () => hold;
 
   const allowed = (action: DestructiveAction) => {
-    if (action === 'reset') return hydrated && corruptBackup === undefined;
-    return typeof corruptBackup === 'string' && corruptBackup.length > 0;
+    if (action === 'reset') return hold === 'future' || (hydrated && corruptBackup === undefined);
+    return hold === 'unreadable' && typeof corruptBackup === 'string' && corruptBackup.length > 0;
   };
 
   const runWrite = (gen: number, payload: string) => {
@@ -172,6 +186,13 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
         const parsed = parseObject(raw);
         if (!parsed) {
           corruptBackup = await copyCorrupt(storage, storageKey, raw);
+          hold = 'unreadable';
+          emit();
+          return;
+        }
+        if (isFutureSchema(parsed, version)) {
+          corruptBackup = await copyCorrupt(storage, storageKey, raw);
+          hold = 'future';
           emit();
           return;
         }
@@ -215,6 +236,8 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
     },
     destructiveArmed: snapshotArmed,
     useDestructiveArmed: () => useSyncExternalStore(subscribe, snapshotArmed, snapshotArmed),
+    schemaHold: snapshotHold,
+    useSchemaHold: () => useSyncExternalStore(subscribe, snapshotHold, snapshotHold),
     commitDestructive: async () => {
       if (armed === 'reset') return store.reset();
       if (armed === 'replace-unreadable') return store.startFresh();
@@ -256,12 +279,38 @@ export function createPersistedStore<T extends object>(key: string, initial: () 
       if (offlineEdit) abandoned = true;
       offlineEdit = false;
       corruptBackup = undefined;
+      hold = undefined;
       failed = false;
       emit();
       return true;
     },
     reset: async () => {
-      if (armed !== 'reset' || !hydrated || corruptBackup !== undefined) return false;
+      if (armed !== 'reset') return false;
+      if (hold === 'future') {
+        armed = null;
+        await settle();
+        const backupKey = typeof corruptBackup === 'string' ? corruptBackup : null;
+        try {
+          await storage.removeItem(storageKey);
+          if ((await storage.getItem(storageKey)) != null) {
+            emit();
+            return false;
+          }
+          if (backupKey) await storage.removeItem(backupKey);
+        } catch {
+          emit();
+          return false;
+        }
+        state = initial();
+        hydrated = true;
+        hold = undefined;
+        corruptBackup = undefined;
+        failed = false;
+        offlineEdit = false;
+        emit();
+        return true;
+      }
+      if (!hydrated || corruptBackup !== undefined) return false;
       armed = null;
       await settle();
       try {

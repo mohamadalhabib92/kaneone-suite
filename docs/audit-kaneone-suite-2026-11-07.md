@@ -6,7 +6,7 @@ Audit lu sur `main` à l’empreinte `c485c863be2801b3deb2c15a697938144310af16` 
 
 ## Diagnostic (5 lignes)
 
-KaneOne Suite est le cockpit local d’un family office multi-holding : pilotage, actifs, mobilité premium, GMAO, projets immobiliers, finance multi-référentiels et portail famille, avec des données d’échantillon étiquetées. Cinq personas sont écrits dans le code : administrateur, directeur financier, opérations, mobilité, portail famille et partenaires. Tout tient dans la clé `kaneone-suite@v1`, sans serveur. La passe 1 empêche déjà d’écraser cette clé tant que le chargement n’a pas réussi, et met de côté un document illisible. Le trou qui reste est qu’une écriture refusée peut quand même avoir l’air faite, et que l’effacement sur mobile part au premier contact.
+KaneOne Suite est le cockpit local d’un family office multi-holding : pilotage, actifs, mobilité premium, GMAO, projets immobiliers, finance multi-référentiels et portail famille, avec des données d’échantillon étiquetées. Cinq personas sont écrits dans le code : administrateur, directeur financier, opérations, mobilité, portail famille et partenaires. Tout tient dans la clé `kaneone-suite@v1`, sans serveur. La passe 1 empêche déjà d’écraser cette clé tant que le chargement n’a pas réussi, et met de côté un document illisible. Deux phrases trop larges restaient : le badge « rien n’est perdu », et l’idée qu’un schéma plus récent est adopté dès lors que ses champs inconnus sont recopiés.
 
 ## Domaine et personas (preuves, pas une devinette sur le nom)
 
@@ -43,8 +43,9 @@ Priorité P0 = perte ou mensonge sur les données déjà là. P1 = risque série
 | Course d’écritures (même fonction) | Deux `setItem` peuvent se terminer dans le désordre : l’ancienne valeur reste sur le disque. | Une seule écriture à la fois ; une écriture dépassée ne valide pas l’enregistrement. | La dernière saisie est celle qui reste si le stockage répond. | 2 | P0 |
 | Effacement (`src/app/settings.tsx` 17-18) | Sur mobile le dialogue vaut toujours oui. Sur le web, `confirm?.(...) ?? true` efface aussi si `confirm` manque. | Deux boutons séparés : Annuler, puis Effacer définitivement. Aucune phrase à taper. | L’annulation laisse la clé intacte. L’effacement est un acte à part. | 2 | P0 |
 | Quarantaine (`src/components/storage-notices.tsx` 28-31) | Le bandeau publie le nom de la clé de copie. « J’ai compris » enchaîne vers l’effacement. | Texte neutre, sans contenu ni nom de clé. Export seulement sur action. Annuler distinct de Confirmer l’effacement. | Le document illisible n’est pas étalé. La copie ne part pas toute seule. | 2 | P0 |
-| Schéma ancien et champs futurs (`src/kit/store.ts` 91) | La fusion garde déjà les clés présentes, mais rien ne le verrouille. Une édition suivante pourrait les perdre. | `mergeStored` : toute clé déjà présente reste, y compris inconnue. Test de bout en bout après édition. | OT, écritures, notes, documents, imports, pièces, calendrier et ids historiques restent. | 2 | P0 |
-| Badge hors ligne (`src/app/_layout.tsx` 42) | Le texte dit « rien n’est perdu ». | Le laisser à la PR 2, qui possède ce fichier. Le bandeau d’échec dit le contraire quand l’écriture rate. | Le slogan reste trop large tant que la PR 2 n’est pas reprise. | 1 | P1 |
+| Schéma de cette version, champs inconnus (`src/kit/store.ts`, fusion) | Une clé absente du type peut être conservée, puis réécrite avec le document au prochain enregistrement. | `mergeStored` seulement si `schemaVersion` est absent ou ≤ 1. Le test du document ancien vérifie que les ids survivent à une édition. | OT, écritures, notes, documents et ids historiques d’un document de cette version restent. | 2 | P0 |
+| Schéma plus récent (`schemaVersion` > 1) | Le garder « avec ses champs » puis le réécrire, c’est l’adopter. | Quarantaine : la clé vivante reste octet pour octet, lecture seule, export explicite, avertissement neutre. L’effacement complet confirmé retire la clé. Annuler ne retire rien. | Une version non prise en charge n’est pas réécrite par une mutation. L’utilisateur peut encore tout effacer, en deux temps. | 2 | P0 |
+| Badge hors ligne (`src/app/_layout.tsx`) | Le texte « rien n’est perdu » est une garantie absolue que le stockage local ne tient pas. | Phrase corrigée sur cette branche : stockage local, relecture identique, pas d’instantané de secours. La branche de la PR 2 n’est pas modifiée. Le fichier est aussi dans son diff : conflit à prévoir. | Le badge ne promet plus l’absence de perte. | 1 | P0 |
 | Rôles (`src/state.ts` 16-24, accueil 42-44) | Changer de puce ouvre tout le même document. Pas de déconnexion : il n’y a pas de session. | Hors de cette passe. Plus tard : droits côté base, quand une base existera. Ici, ne pas ajouter de faux verrou. | Un rôle « portail » n’isole rien sur l’appareil. | 5 | P1 |
 | CI (`.github/workflows/pages.yml` 27-29) | Le workflow typecheck et publie la PWA. Il ne lançait pas les tests. | Ajouter `npm run e2e` avant le typecheck. La publication GitHub Pages existante ne part que si les tests passent, et seulement après fusion sur `main`. Cette passe ne pousse pas `main`. | La fondation casse la publication si elle régresse. | 1 | P1 |
 | Bascule de schéma future | Aucune porte : un futur changement de forme pourrait réécrire la clé vivante. | Module `src/kit/cutover-gate.ts`, non branché au démarrage : instantané, copie isolée, empreinte, comptes, retour arrière sur la seule clé isolée. | La clé `kaneone-suite@v1` n’est pas migrée. | 2 | P1 |
@@ -78,7 +79,9 @@ Clé inchangée : `kaneone-suite@v1` (`src/state.ts`, `createPersistedStore(...,
 
 `seedEntries` (`src/state.ts` 144-164) fabrique des ids avec `uid()` pour un **nouvel** état mémoire, quand aucune donnée n’est encore sur le disque. Un document déjà enregistré qui contient `entries` ne passe pas par cette régénération. Limite : un document partiel qui **omet** la clé `entries` recevrait, à la prochaine édition, la graine du moment. Les sauvegardes produites par cette app écrivent l’objet entier ; le test verrouille le document complet.
 
-Il n’y a pas de déconnexion. Changer de rôle écrit `role` et laisse le reste. L’effacement est l’unique vidage, et il est maintenant en deux temps.
+Il n’y a pas de déconnexion. Changer de rôle écrit `role` et laisse le reste. L’effacement est l’unique vidage, et il est en deux temps.
+
+Un document dont `schemaVersion` est un nombre fini supérieur à 1 n’est pas fusionné et n’est pas réécrit. La clé `kaneone-suite@v1` reste la chaîne d’origine. L’export relit cette chaîne. Seul un effacement confirmé la retire. Un champ inconnu sans ce numéro de version, sur un document de la version 1, continue d’être conservé lors d’une édition : ce n’est pas une adoption de schéma.
 
 ## Ce que cette passe change
 
@@ -88,7 +91,9 @@ Un seul fil : dire la vérité sur l’enregistrement, et séparer l’annulatio
 - Les écritures s’enchaînent. Une écriture plus ancienne ne confirme pas la plus récente.
 - Quarantaine : texte neutre, contenu non affiché, export seulement si l’on appuie sur « Exporter la copie ».
 - Effacement des données de l’appareil, et remplacement d’un original illisible : Annuler d’un côté, confirmation de l’autre. `reset` et `startFresh` ne font rien sans cette demande.
-- `mergeStored` garde les clés déjà là et ne complète que les clés absentes.
+- `mergeStored` garde les clés déjà là pour un document de cette version (`schemaVersion` absent ou ≤ 1).
+- Un `schemaVersion` supérieur reste en quarantaine : octets d’origine inchangés, pas d’adoption par une mutation, export explicite, texte neutre. L’effacement complet confirmé retire la clé et la copie. Annuler ne touche pas aux octets.
+- Badge hors ligne corrigé dans `src/app/_layout.tsx` de cette branche. La branche `ux/passe-plaisir-2026-11-04` n’est pas poussée.
 - `rehearseCutover` / `rollbackIsolated` : exercice sur des clés `.snapshot-` et `.isolated-`. Aucun appel au démarrage. La clé vivante n’est pas écrite par cet exercice.
 - Le workflow Pages lance `npm run e2e` avant publication. Cette passe ne déclenche pas ce workflow.
 
@@ -97,7 +102,7 @@ Ce qui n’est pas fait, volontairement : pas de sauvegarde ni de restauration u
 ## Top 5 de la semaine
 
 1. **Fondation de préservation** — faite dans la PR de cette passe. Critère : les tests cités plus bas restent verts.
-2. **Phrase du badge hors ligne** — remplacer « rien n’est perdu » dans `src/app/_layout.tsx` une fois la PR 2 intégrée, pour ne pas la contredire. Le bandeau d’échec couvre déjà le cas « écriture ratée ».
+2. **Badge hors ligne** — corrigé sur cette branche. Au moment de fusionner la PR 2, garder la phrase « stockage local / relecture identique / pas d’instantané de secours » et ne pas revenir à « rien n’est perdu ».
 3. **Ne pas publier** — ni App Store, ni Play, ni EAS, tant que les rôles sont une puce et les montants des échantillons.
 4. **Graine d’écritures** — ids stables pour un premier lancement vide, sans réécrire un document qui a déjà ses ids.
 5. **Contrat de rôles sur papier** — décrire, sans coder de serveur, quelles lignes du document chaque persona peut lire. Le portail ne doit pas devenir un profil croisé des opérations et de la famille.
@@ -106,25 +111,28 @@ Ce qui n’est pas fait, volontairement : pas de sauvegarde ni de restauration u
 
 | Cible | Seuil | Mesure du 7 novembre 2026 |
 |---|---|---|
-| Écriture avant chargement réussi | 0 | `npm run test:store` vert (cas déjà là depuis la PR 1, rejoué) |
+| Écriture avant chargement réussi | 0 | `npm run test:store` : le script affiche `script passed`. Il ne publie pas un nombre de cas. Aucun nombre n’est inventé ici |
 | Échec `setItem` ou relecture différente | bandeau non enregistré, réessai, pas de faux succès | même commande, cas disque plein et disque menteur |
 | Annuler après armement | 0 octet supprimé | même commande |
-| Document ancien + champ futur après édition | ids `wo-1`, `e-historique`, `doc-1`, `imp-1`, `att-1`, `cal-1`, `futureField.keep` présents | même commande |
-| Exercice de bascule | clé vivante byte-identique ; comptes `wos=1`, `entries=1`, `__keys=3` ; retour arrière sur l’isolé seulement | même commande |
-| Scénarios de démo | 6/6 | `npm run e2e` → `Passe 1 : 6/6 scénarios, contraste AA, stockage kaneone-suite@v1` |
+| Document de cette version + champs inconnus après édition | ids `wo-1`, `e-historique`, `doc-1`, `imp-1`, `att-1`, `cal-1`, `futureField.keep` présents | `npm run test:store` (le script ne compte pas les cas ; il affiche `script passed`) |
+| `schemaVersion` 2 + mutation | octets de la clé vivante identiques au chargement et après `set` ; export égal à ces octets ; effacement seulement après confirmation | même script, cas ajouté |
+| `schemaVersion` 1 | pas de quarantaine ; l’édition est écrite | même script |
+| Exercice de bascule | clé vivante byte-identique ; comptes `wos=1`, `entries=1`, `__keys=3` ; retour arrière sur l’isolé seulement | même script |
+| Scénarios de démo | 6/6 | `npm run e2e` affiche `Passe 1 : 6/6 scénarios, contraste AA, stockage kaneone-suite@v1`. Ce chiffre est celui du script Node, pas un parcours iPhone |
 | Typecheck | 0 erreur | `npx tsc --noEmit` code de sortie 0 |
+| Badge | le source ne contient plus « rien n’est perdu » | le script `test:store` lit `src/app/_layout.tsx` |
 | Phrase secrète ou nom de clé dans l’UI | 0 | le test lit les textes et les fichiers d’écran |
 | Appels réseau métier au démarrage | 0 | e2e : `fetch` interdit dans `src/`, Sentry non contacté |
 | Tests déjà rouges sur `main` | aucun trouvé | `test:store` et `e2e` verts avant et après le correctif |
 | Perte nulle garantie | non revendiquée | le bandeau dit l’échec ; il n’y a pas de copie de restauration |
 
-Limites de la mesure : pas d’appareil iOS, pas de disque réellement plein (l’échec est simulé par une exception), pas d’ESLint dans le dépôt, pas de soumission store. Parcours web joué dans Chrome headless : entrée Administrateur, Réglages, premier bouton d’effacement, puis Annuler. La clé `kaneone-suite@v1` reste identique (16 819 octets). « Effacer définitivement » n’apparaît qu’après ce premier bouton et disparaît sur Annuler.
+Limites de la mesure : pas d’appareil iOS et pas d’iPhone. Chrome headless a ouvert les six scénarios dans le web (sortie : `WEB ONLY scénarios validés 6 clics 27`). Cela prouve le web seulement. Le disque plein est simulé par une exception. Pas d’ESLint dans le dépôt. Pas de soumission store. `npm run test:store` ne donne pas de décompte : le script affiche `script passed`, sans chiffre inventé. `npm run e2e` donne le décompte Node `Passe 1 : 6/6 scénarios, contraste AA, stockage kaneone-suite@v1`.
 
 ## Cinq prompts détaillés (prochaines passes, pas celle-ci)
 
-### Prompt A — Badge honnête, après la PR 2
+### Prompt A — Garder la phrase du badge en fusionnant la PR 2
 
-Sur `kaneone-suite`, après fusion de la PR 2, une seule ligne : le badge hors ligne de `src/app/_layout.tsx`. Remplacer la promesse « rien n’est perdu » par une phrase qui dit que les données restent sur l’appareil lorsque l’écriture a été relue. Ne pas refaire le thème, les vibrations, ni l’apparence. Ne pas toucher à `kaneone-suite@v1`. Test : le texte source ne contient plus « rien n’est perdu ». `npm run e2e` reste 6/6. Pas de build EAS, pas de fusion vers `main` sans revue.
+La phrase est déjà corrigée sur `cursor/fondation-preservation-f216`, dans `src/app/_layout.tsx`. La branche `ux/passe-plaisir-2026-11-04` n’a pas été modifiée. Elle touche le même fichier (apparence, barre d’état). À la fusion, conserver : « Hors ligne — stockage local de cet appareil. Une écriture n’est gardée qu’après relecture identique. Pas d’instantané de secours. » Ne pas rétablir « rien n’est perdu ». Ne pas refaire le thème ni les vibrations. `npm run e2e` doit encore afficher `6/6`. Pas de build EAS.
 
 ### Prompt B — Ids de graine stables, documents déjà là intacts
 
@@ -199,7 +207,8 @@ Store : brouillon seulement, distribution publique déconseillée par la propre 
 - `src/kit/preservation-copy.ts` — textes sans document brut
 - `src/components/storage-notices.tsx` — quarantaine et échec d’écriture
 - `src/components/local-erase.tsx` — Annuler / Effacer définitivement
-- `src/app/settings.tsx` — branche le composant d’effacement (seul fichier en commun avec la PR 2 ; les sections Apparence et Vibrations de cette PR ne sont pas reprises)
+- `src/app/_layout.tsx` — badge hors ligne. Chevauche la PR 2. Seule la phrase a changé sur cette branche.
+- `src/app/settings.tsx` — effacement en deux temps. Chevauche aussi la PR 2 (apparence, vibrations), sans reprendre ces sections.
 - `scripts/store-guard.test.ts` — cas ajoutés
 - `.github/workflows/pages.yml` — `npm run e2e` avant le reste
 - `README.md` — limites dites sans promesse de zéro perte
@@ -209,4 +218,4 @@ Store : brouillon seulement, distribution publique déconseillée par la propre 
 | PR | État | Rapport avec cette passe |
 |---|---|---|
 | n° 1 `cursor/passe-1-fondations-dc82` | fusionnée, `c485c863` | Vérifiée. Chargement, copie d’un blob illisible, contraste, portail. Non refaite. |
-| n° 2 `ux/passe-plaisir-2026-11-04` | ouverte | Non modifiée. Fichiers laissés : thème, haptique, `state.ts` (`appearance`), `_layout.tsx`, `ui.tsx`, e2e accessibilité. `settings.tsx` est touché ici seulement pour retirer l’effacement en un geste. |
+| n° 2 `ux/passe-plaisir-2026-11-04` | ouverte, branche non modifiée | Chevauchements réels de cette PR : `src/app/settings.tsx` (effacement) et `src/app/_layout.tsx` (une phrase du badge). Le diff de la PR 2 contient encore « rien n’est perdu » comme ligne de contexte, à côté de l’apparence et de la barre d’état. Thème, haptique, `state.ts`, `ui.tsx` et l’e2e accessibilité de la PR 2 ne sont pas repris ici. |

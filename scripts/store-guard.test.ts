@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createPersistedStore } from '../src/kit/store';
 import { rehearseCutover, rollbackIsolated } from '../src/kit/cutover-gate';
-import { eraseNotice, quarantineNotice, unsavedNotice } from '../src/kit/preservation-copy';
+import { eraseNotice, futureSchemaNotice, quarantineNotice, unsavedNotice } from '../src/kit/preservation-copy';
 
 function fail(message: string): never {
   throw new Error(message);
@@ -343,21 +343,69 @@ async function main() {
   if (gateDisk.data.get(live) !== liveRaw) fail('le retour arrière a touché la clé vivante');
   if (gateDisk.data.get(report.isolatedKey) !== liveRaw) fail('copie isolée non restaurée');
 
+  const supportedDisk = memory();
+  const supportedKey = 'guard-supported@v1';
+  const supportedRaw = JSON.stringify({ schemaVersion: 1, marker: 'enregistre', n: 1, extra: { keep: true } });
+  await supportedDisk.setItem(supportedKey, supportedRaw);
+  const supported = createPersistedStore('guard-supported', () => ({ marker: 'vide', n: 0 }), 1, supportedDisk);
+  await supported.hydrate();
+  if (supported.schemaHold()) fail('la version prise en charge est mise en quarantaine');
+  supported.set((current) => ({ ...current, n: 2 }));
+  await until(() => !supported.writing() && !supported.unsaved(), 'version prise en charge non écrite');
+  const supportedRound = JSON.parse(supportedDisk.data.get(supportedKey) || 'null') as { schemaVersion: number; n: number; extra: { keep: boolean } };
+  if (supportedRound.schemaVersion !== 1 || supportedRound.n !== 2 || supportedRound.extra.keep !== true) {
+    fail('version prise en charge altérée : ' + supportedDisk.data.get(supportedKey));
+  }
+
+  const futureRaw = JSON.stringify({
+    schemaVersion: 2,
+    wos: [{ id: 'wo-future', legacyNote: 'garde' }],
+    entries: [{ id: 'e-historique', credit: 10 }],
+    futureOnly: { keep: true },
+  });
+  const futureDisk = memory();
+  const futureKey = 'guard-future@v1';
+  await futureDisk.setItem(futureKey, futureRaw);
+  const future = createPersistedStore('guard-future', () => ({ marker: 'vide' }), 1, futureDisk);
+  await future.hydrate();
+  if (future.schemaHold() !== 'future') fail('schéma futur ouvert comme s’il était pris en charge');
+  if (futureDisk.data.get(futureKey) !== futureRaw) fail('schéma futur réécrit au chargement');
+  future.set({ marker: 'muté', schemaVersion: 1 });
+  await wait(400);
+  if (futureDisk.data.get(futureKey) !== futureRaw) fail('mutation adoptée sur un schéma futur');
+  if (future.schemaHold() !== 'future') fail('la mutation a levé la lecture seule');
+  const futureExport = await future.readQuarantine();
+  if (futureExport !== futureRaw) fail('export différent des octets d’origine');
+  const futureCopy = futureSchemaNotice(true).title + futureSchemaNotice(true).text + futureSchemaNotice(false).text;
+  if (futureCopy.includes(futureRaw) || futureCopy.includes('wo-future') || futureCopy.includes('e-historique') || futureCopy.includes('.corrupt-')) {
+    fail('l’avertissement de version affiche le document');
+  }
+  if (await future.commitDestructive()) fail('effacement du schéma futur sans demande');
+  if (!future.armDestructive('reset')) fail('effacement complet du schéma futur refusé');
+  future.disarmDestructive();
+  if (futureDisk.data.get(futureKey) !== futureRaw) fail('annulation a modifié le schéma futur');
+  if (!future.armDestructive('reset')) fail('seconde demande d’effacement du schéma futur refusée');
+  if (!(await future.commitDestructive())) fail('effacement confirmé du schéma futur refusé');
+  if (futureDisk.data.has(futureKey)) fail('la clé vivante reste après l’effacement confirmé');
+  const futureLeft = [...futureDisk.data.keys()].filter((key) => key.startsWith('guard-future'));
+  if (futureLeft.length) fail('copie restante après effacement complet : ' + futureLeft.join(','));
+
   const secret = '###SECRET-BLOB###';
-  const shown = [quarantineNotice(true), quarantineNotice(false), unsavedNotice(false), unsavedNotice(true), eraseNotice()]
+  const shown = [quarantineNotice(true), quarantineNotice(false), futureSchemaNotice(true), futureSchemaNotice(false), unsavedNotice(false), unsavedNotice(true), eraseNotice()]
     .map((item) => item.title + item.text)
     .join('\n');
   if (shown.includes(secret) || shown.includes('.corrupt-')) fail('le texte affiché contient le document ou la clé');
   const root = join(import.meta.dirname, '..');
-  const ui = ['src/components/storage-notices.tsx', 'src/components/local-erase.tsx', 'src/app/settings.tsx', 'src/kit/preservation-copy.ts']
+  const ui = ['src/components/storage-notices.tsx', 'src/components/local-erase.tsx', 'src/app/settings.tsx', 'src/kit/preservation-copy.ts', 'src/app/_layout.tsx']
     .map((file) => readFileSync(join(root, file), 'utf8'))
     .join('\n');
   if (/tapez|phrase secrète|confirm\?\./i.test(ui)) fail('confirmation cachée ou phrase à saisir');
   if (ui.includes('.corrupt-')) fail('nom de clé de quarantaine présent dans l’interface');
+  if (ui.includes('rien n’est perdu') || ui.includes("rien n'est perdu")) fail('garantie absolue encore affichée');
   const quarantined = await broken.readQuarantine();
   if (quarantined !== null) fail('la copie reste lisible après effacement de l’original');
 
-  console.log('store : aucune écriture avant un chargement réussi ; échec visible ; schéma ancien et champs futurs conservés');
+  console.log('store : script passed ; écriture relue ; schéma futur non réécrit ; effacement confirmé possible');
 }
 
 main().catch((error) => {

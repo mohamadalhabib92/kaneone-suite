@@ -26,6 +26,19 @@ export function unsavedNotice(writing: boolean): { title: string; text: string }
   };
 }
 
+export function futureSchemaNotice(copied: boolean): { title: string; text: string } {
+  if (copied) {
+    return {
+      title: 'Version plus récente, laissée telle quelle',
+      text: 'Ce document n’est pas ouvert par cette version. Il reste dans le stockage local, octet pour octet, et n’est pas affiché. L’export est une action à part. L’effacement complet ne part que si vous le confirmez.',
+    };
+  }
+  return {
+    title: 'Version plus récente, laissée telle quelle',
+    text: 'Ce document n’est pas ouvert par cette version. Il n’a pas été modifié et n’est pas affiché. La copie d’export n’a pas pu être écrite. L’effacement complet reste possible si vous le confirmez.',
+  };
+}
+
 export function eraseNotice(): { title: string; text: string } {
   return {
     title: 'Effacement définitif',
