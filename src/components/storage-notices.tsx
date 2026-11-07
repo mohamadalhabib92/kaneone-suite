@@ -2,16 +2,23 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Banner, Button, useToast } from '@/kit/ui';
+import { exportText } from '@/kit/files';
+import { quarantineNotice, unsavedNotice } from '@/kit/preservation-copy';
 import { store } from '@/state';
 
-/** Bandeaux liés au stockage local : modification hors ligne abandonnée, ou blob illisible. */
+/** Bandeaux liés au stockage local. Le document illisible n’est jamais affiché. */
 export function StorageNotices() {
   const abandoned = store.useOfflineEditAbandoned();
   const backup = store.useCorruptBackupKey();
+  const unsaved = store.useUnsaved();
+  const writing = store.useWriting();
+  const armed = store.useDestructiveArmed();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const [ack, setAck] = useState(false);
-  if (!abandoned && backup === undefined) return null;
+  const [exporting, setExporting] = useState(false);
+  if (!abandoned && backup === undefined && !unsaved) return null;
+  const quarantine = backup === undefined ? null : quarantineNotice(!!backup);
+  const pending = unsaved ? unsavedNotice(writing) : null;
   return (
     <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: 16, paddingTop: insets.top + 8, gap: 8 }}>
       {abandoned ? (
@@ -21,31 +28,62 @@ export function StorageNotices() {
           text="Une modification faite hors ligne a été abandonnée. Les données déjà enregistrées sont conservées."
         />
       ) : null}
-      {backup !== undefined ? (
+      {pending ? <Banner kind="warning" title={pending.title} text={pending.text} action={<Button small kind="secondary" title="Réessayer l’enregistrement" disabled={writing} onPress={() => store.retrySave()} />} /> : null}
+      {quarantine ? (
         <Banner
-          kind="danger"
-          title="Données illisibles"
-          text={
-            backup
-              ? `Une copie conforme a été conservée sous ${backup}. L’original n’a pas été modifié.`
-              : 'La copie de secours a échoué. L’original n’a pas été modifié.'
-          }
+          kind="warning"
+          title={quarantine.title}
+          text={quarantine.text}
           action={
             backup ? (
-              ack ? (
+              <View style={{ gap: 8 }}>
                 <Button
                   small
-                  kind="danger"
-                  title="Repartir de zéro"
+                  kind="secondary"
+                  title="Exporter la copie"
+                  disabled={exporting}
                   onPress={() => {
-                    store.startFresh().then((ok) => {
-                      if (!ok) toast('Réinitialisation refusée : la copie de secours ne correspond pas à l’original.', 'error');
-                    });
+                    if (exporting) return;
+                    setExporting(true);
+                    store
+                      .readQuarantine()
+                      .then(async (raw) => {
+                        if (raw == null) {
+                          toast('Export interrompu : la copie n’est pas confirmée.', 'error');
+                          return;
+                        }
+                        await exportText('kaneone-quarantaine.txt', raw, 'text/plain');
+                        toast('Export lancé. Le contenu n’est pas affiché ici.', 'info');
+                      })
+                      .catch(() => toast('Export non abouti.', 'error'))
+                      .finally(() => setExporting(false));
                   }}
                 />
-              ) : (
-                <Button small kind="secondary" title="J’ai compris" onPress={() => setAck(true)} />
-              )
+                {armed === 'replace-unreadable' ? (
+                  <View style={{ gap: 8 }}>
+                    <Button small kind="secondary" title="Annuler" onPress={() => store.disarmDestructive()} />
+                    <Button
+                      small
+                      kind="danger"
+                      title="Confirmer l’effacement"
+                      onPress={() => {
+                        store.commitDestructive().then((ok) => {
+                          if (!ok) toast('Effacement refusé : la copie ne correspond pas à l’original.', 'error');
+                        });
+                      }}
+                    />
+                  </View>
+                ) : (
+                  <Button
+                    small
+                    kind="danger"
+                    title="Effacer l’original illisible"
+                    onPress={() => {
+                      if (!store.armDestructive('replace-unreadable')) toast('Effacement indisponible.', 'error');
+                    }}
+                  />
+                )}
+              </View>
             ) : null
           }
         />
