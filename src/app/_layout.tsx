@@ -51,7 +51,7 @@ function AppFrame() {
       <WebBaseline color={theme.primary} />
       <DelightProvider>
       <DemoModeProvider value={figuresAreDemo(mode)}>
-        <OfflineBadge text="Hors ligne — mode démo local, rien n’est perdu" />
+        <OfflineBadge text="Hors ligne — stockage local de cet appareil. Une écriture n’est gardée qu’après relecture identique. Pas d’instantané de secours." />
         <StorageNotices />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }} />
       </DemoModeProvider>
