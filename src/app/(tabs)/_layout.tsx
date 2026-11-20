@@ -1,13 +1,17 @@
 import React from 'react';
-import type { ColorValue } from 'react-native';
+import { Platform, type ColorValue } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { Ionicons } from '@/kit/ui';
 import { useTheme } from '@/kit/theme';
+import { useReduceTransparency } from '@/kit/a11y';
 import { haptic } from '@/kit/haptics';
+import { glassPaint, HIT } from '@/kit/verre';
 import { can, store } from '@/state';
 
 export default function TabsLayout() {
   const t = useTheme();
+  const solid = useReduceTransparency();
+  const g = glassPaint(t, solid);
   const role = store.useSelect((s) => s.role);
   if (!role) return <Redirect href="/welcome" />;
   const internal = can(role, 'internal');
@@ -23,7 +27,20 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: t.primary,
         tabBarInactiveTintColor: t.textMuted,
-        tabBarStyle: { backgroundColor: t.surface, borderTopColor: t.border, minHeight: 60, elevation: 0, shadowOpacity: 0 },
+        tabBarAllowFontScaling: true,
+        tabBarStyle: {
+          backgroundColor: g.backgroundColor,
+          borderTopColor: g.borderTopColor,
+          borderTopWidth: 1,
+          minHeight: 56,
+          elevation: solid ? 0 : 12,
+          shadowColor: '#041018',
+          shadowOpacity: solid ? 0 : t.dark ? 0.45 : 0.16,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: -6 },
+          ...(Platform.OS === 'web' && !solid ? { backdropFilter: 'blur(18px)' } : null),
+        },
+        tabBarItemStyle: { minHeight: HIT },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >

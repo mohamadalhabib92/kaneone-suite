@@ -27,6 +27,7 @@ import { withTimeout } from './store';
 import { alpha, useTheme, type Palette } from './theme';
 import { haptic } from './haptics';
 import { useEntrance, usePressScale, useSystemReduceMotion } from './motion';
+import { glassPaint, reliefEdge, space, typeScale, HIT, TYPE_MAX, type TypeRole } from './verre';
 
 export type IconName = React.ComponentProps<typeof Ionicons>['name'];
 export { Ionicons };
@@ -73,18 +74,13 @@ export function elevation(t: Palette, level: 1 | 2 | 3 = 1): ViewStyle {
 }
 
 /* ---------- Typo ---------- */
-type TVariant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'small' | 'caption' | 'label' | 'mono';
-const sizes: Record<TVariant, { fs: number; fw: TextStyle['fontWeight']; lh?: number }> = {
-  display: { fs: 32, fw: '800', lh: 38 },
-  h1: { fs: 24, fw: '800', lh: 30 },
-  h2: { fs: 19, fw: '700', lh: 25 },
-  h3: { fs: 16, fw: '700', lh: 22 },
-  body: { fs: 15, fw: '400', lh: 21 },
-  small: { fs: 13, fw: '400', lh: 18 },
-  caption: { fs: 11.5, fw: '600', lh: 15 },
-  label: { fs: 12, fw: '700', lh: 16 },
-  mono: { fs: 13, fw: '500', lh: 18 },
-};
+type TVariant = TypeRole;
+
+/** Flou du voile, web seulement. Natif : le voile translucide et l’arête suffisent. */
+function verreBlur(solid: boolean): ViewStyle {
+  if (solid || Platform.OS !== 'web') return {};
+  return { backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' } as ViewStyle;
+}
 
 export function T({
   v = 'body',
@@ -97,6 +93,7 @@ export function T({
   selectable,
   tabular,
   accessibilityLabel,
+  accessibilityRole,
 }: {
   v?: TVariant;
   color?: string;
@@ -108,14 +105,18 @@ export function T({
   selectable?: boolean;
   tabular?: boolean;
   accessibilityLabel?: string;
+  accessibilityRole?: 'header' | 'text';
 }) {
   const t = useTheme();
   const large = useLargeText();
-  const s = sizes[v];
+  const s = typeScale[v];
   return (
     <Text
       numberOfLines={large ? undefined : numberOfLines}
       selectable={selectable}
+      allowFontScaling
+      maxFontSizeMultiplier={TYPE_MAX}
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       style={[
         {
@@ -154,7 +155,7 @@ export function Screen({
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const inner = (
-    <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', padding: padded ? 16 : 0, gap: t.gap, paddingBottom: 28 + insets.bottom }}>{children}</View>
+    <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', padding: padded ? space.md : 0, gap: t.gap, paddingBottom: space.xxl + insets.bottom }}>{children}</View>
   );
   return (
     <View style={{ flex: 1, backgroundColor: t.bg, paddingTop: insets.top }}>
@@ -172,20 +173,35 @@ export function Screen({
 }
 
 export function Header({ title, subtitle, right, left }: { title: string; subtitle?: string; right?: React.ReactNode; left?: React.ReactNode }) {
+  const t = useTheme();
+  const solid = useReduceTransparency();
+  const g = glassPaint(t, solid);
   return (
-    <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      {left}
-      <View style={{ flex: 1 }}>
-        <T v="h1" numberOfLines={3}>
-          {title}
-        </T>
-        {subtitle ? (
-          <T v="small" muted numberOfLines={3}>
-            {subtitle}
+    <View
+      style={{
+        width: '100%',
+        backgroundColor: g.backgroundColor,
+        borderBottomWidth: 1,
+        borderBottomColor: g.borderColor,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: g.borderTopColor,
+        ...verreBlur(solid),
+      }}
+    >
+      <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.xs, flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+        {left}
+        <View style={{ flex: 1 }}>
+          <T v="h1" numberOfLines={3} accessibilityRole="header">
+            {title}
           </T>
-        ) : null}
+          {subtitle ? (
+            <T v="small" muted numberOfLines={3}>
+              {subtitle}
+            </T>
+          ) : null}
+        </View>
+        {right}
       </View>
-      {right}
     </View>
   );
 }
@@ -197,17 +213,21 @@ export function Row({ children, gap = 10, style, wrap }: { children: React.React
 export function Card({ children, style, onPress, accent, a11y }: { children: React.ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void; accent?: string; a11y?: string }) {
   const t = useTheme();
   const reduce = useReduceMotion();
+  const solid = useReduceTransparency();
+  const g = glassPaint(t, solid);
   const press = usePressScale(reduce, 0.985);
   const base: ViewStyle = {
-    backgroundColor: t.surface,
+    backgroundColor: g.backgroundColor,
     borderRadius: t.radius,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: t.border,
+    borderWidth: 1,
+    borderColor: g.borderColor,
+    borderTopColor: g.borderTopColor,
     padding: t.cardPad,
-    gap: 8,
+    gap: space.xs,
+    ...verreBlur(solid),
     ...elevation(t, 1),
-    borderLeftWidth: accent ? 3 : StyleSheet.hairlineWidth,
-    borderLeftColor: accent ?? t.border,
+    borderLeftWidth: accent ? 3 : 1,
+    borderLeftColor: accent ?? g.borderColor,
   };
   if (onPress)
     return (
@@ -283,10 +303,27 @@ export function Button({
   const t = useTheme();
   const reduce = useReduceMotion();
   const press = usePressScale(reduce || !!disabled || !!loading);
+  const [down, setDown] = useState(false);
+  const lifted = kind !== 'ghost' && !disabled;
   const bg = { primary: t.primary, secondary: t.surface2, ghost: 'transparent', danger: t.danger, success: t.success }[kind];
   const fg = { primary: t.primaryText, secondary: t.text, ghost: t.primary, danger: t.onDanger, success: t.onSuccess }[kind];
+  const edge = reliefEdge(t.dark, down);
+  const web = Platform.OS === 'web';
   return (
-    <Animated.View style={[{ transform: [{ scale: press.scale }], alignSelf: full ? 'stretch' : 'auto' }, flexOf(style)]}>
+    <Animated.View
+      style={[
+        { transform: [{ scale: press.scale }], alignSelf: full ? 'stretch' : 'auto' },
+        lifted && !web
+          ? {
+              shadowColor: '#041018',
+              shadowOpacity: down ? 0.16 : t.dark ? 0.5 : 0.22,
+              shadowRadius: down ? 3 : 14,
+              shadowOffset: { width: 0, height: down ? 1 : 8 },
+            }
+          : null,
+        flexOf(style),
+      ]}
+    >
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={a11y ?? title}
@@ -301,32 +338,61 @@ export function Button({
             }
           : undefined
       }
-      onPressIn={press.onPressIn}
-      onPressOut={press.onPressOut}
-      style={({ pressed }) => [
+      onPressIn={() => {
+        if (!disabled && !loading) setDown(true);
+        press.onPressIn();
+      }}
+      onPressOut={() => {
+        setDown(false);
+        press.onPressOut();
+      }}
+      style={[
         {
-          minHeight: small ? 44 : 48,
-          paddingHorizontal: small ? 12 : 18,
-          paddingVertical: 8,
-          minWidth: 44,
+          minHeight: small ? HIT : 48,
+          paddingHorizontal: small ? space.sm : 18,
+          paddingVertical: space.xs,
+          minWidth: HIT,
           borderRadius: t.radius - 2,
-          backgroundColor: bg,
-          borderWidth: kind === 'secondary' || kind === 'ghost' ? StyleSheet.hairlineWidth : 0,
-          borderColor: kind === 'ghost' ? 'transparent' : t.border,
+          backgroundColor: kind === 'ghost' && down ? t.surface2 : bg,
+          borderTopWidth: lifted ? 1 : kind === 'ghost' ? 0 : StyleSheet.hairlineWidth,
+          borderBottomWidth: lifted ? 1 : kind === 'ghost' ? 0 : StyleSheet.hairlineWidth,
+          borderLeftWidth: lifted ? 1 : kind === 'ghost' ? 0 : StyleSheet.hairlineWidth,
+          borderRightWidth: lifted ? 1 : kind === 'ghost' ? 0 : StyleSheet.hairlineWidth,
+          borderTopColor: lifted ? edge.top : 'transparent',
+          borderBottomColor: lifted ? edge.bottom : 'transparent',
+          borderLeftColor: lifted ? edge.side : 'transparent',
+          borderRightColor: lifted ? edge.side : 'transparent',
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
-          gap: 8,
-          opacity: disabled ? 0.45 : pressed ? 0.9 : 1,
+          gap: space.xs,
+          opacity: disabled ? 0.45 : 1,
           alignSelf: full ? 'stretch' : 'auto',
-          ...(kind === 'primary' || kind === 'success' || kind === 'danger' ? (!disabled ? elevation(t, 1) : null) : null),
+          transform: lifted && down ? [{ translateY: 1 }] : undefined,
+          ...(lifted && web
+            ? ({
+                boxShadow: down
+                  ? `inset 0 1px 0 ${edge.top}, 0 1px 1px rgba(0,0,0,0.35)`
+                  : `inset 0 1px 0 ${edge.top}, 0 1px 0 rgba(0,0,0,0.2), 0 8px 16px rgba(4,8,16,0.32)`,
+              } as ViewStyle)
+            : lifted
+              ? {
+                  shadowColor: '#041018',
+                  shadowOpacity: down ? 0.2 : 0.28,
+                  shadowRadius: down ? 1 : 3,
+                  shadowOffset: { width: 0, height: down ? 1 : 2 },
+                  elevation: down ? 1 : 6,
+                }
+              : null),
         },
         style,
         flexOf(style) ? { flex: undefined, flexGrow: undefined, flexBasis: undefined } : null,
       ]}
     >
       {loading ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={small ? 16 : 18} color={fg} /> : null}
-      <Text style={{ color: fg, fontWeight: '700', fontSize: (small ? 13 : 15) * t.fontScale, flexShrink: 1, textAlign: 'center' }}>{title}</Text>
+      <Text allowFontScaling maxFontSizeMultiplier={TYPE_MAX} style={{ color: fg, fontWeight: '700', fontSize: (small ? 13 : 15) * t.fontScale, flexShrink: 1, textAlign: 'center' }}>
+        {title}
+      </Text>
     </Pressable>
     </Animated.View>
   );
@@ -347,7 +413,17 @@ export function IconButton({ icon, onPress, a11y, color, size = 22 }: { icon: Ic
           : undefined
       }
       hitSlop={6}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: pressed ? t.surface2 : 'transparent' })}
+      style={({ pressed }) => ({
+        width: HIT,
+        height: HIT,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: pressed ? t.surface2 : 'transparent',
+        borderTopWidth: pressed ? 1 : 0,
+        borderTopColor: t.dark ? '#FFFFFF40' : '#FFFFFF',
+        transform: pressed ? [{ translateY: 1 }] : undefined,
+      })}
     >
       <Ionicons name={icon} size={size} color={color ?? t.text} />
     </Pressable>
@@ -373,8 +449,8 @@ export function Chip({ label, selected, onPress, color, icon }: { label: string;
           : undefined
       }
       style={{
-        minHeight: 44,
-        minWidth: 44,
+        minHeight: HIT,
+        minWidth: HIT,
         maxWidth: '100%',
         paddingHorizontal: 12,
         paddingVertical: 6,
@@ -388,7 +464,7 @@ export function Chip({ label, selected, onPress, color, icon }: { label: string;
       }}
     >
       {icon ? <Ionicons name={icon} size={14} color={selected ? ink : t.textMuted} /> : null}
-      <Text style={{ color: selected ? ink : t.text, fontWeight: selected ? '700' : '500', fontSize: 13 * t.fontScale, flexShrink: 1 }}>{label}</Text>
+      <Text allowFontScaling maxFontSizeMultiplier={TYPE_MAX} style={{ color: selected ? ink : t.text, fontWeight: selected ? '700' : '500', fontSize: 13 * t.fontScale, flexShrink: 1 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -409,8 +485,9 @@ export function Badge({ label, color, icon }: { label: string; color?: string; i
 export function Segmented<K extends string>({ options, value, onChange }: { options: { key: K; label: string }[]; value: K; onChange: (k: K) => void }) {
   const t = useTheme();
   const large = useLargeText();
+  const g = glassPaint(t, useReduceTransparency());
   return (
-    <View accessibilityRole="tablist" style={{ flexDirection: large ? 'column' : 'row', backgroundColor: t.surface2, borderRadius: t.radius, padding: 3 }}>
+    <View accessibilityRole="tablist" style={{ flexDirection: large ? 'column' : 'row', backgroundColor: g.backgroundColor, borderRadius: t.radius, padding: 3, borderWidth: 1, borderColor: g.borderColor, borderTopColor: g.borderTopColor }}>
       {options.map((o) => {
         const on = o.key === value;
         return (
@@ -423,9 +500,9 @@ export function Segmented<K extends string>({ options, value, onChange }: { opti
               if (!on) haptic.select();
               onChange(o.key);
             }}
-            style={{ flex: large ? undefined : 1, minHeight: 44, paddingHorizontal: 8, paddingVertical: 6, borderRadius: t.radius - 3, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.surface : 'transparent', ...(on ? elevation(t, 1) : null) }}
+            style={{ flex: large ? undefined : 1, minHeight: HIT, paddingHorizontal: space.xs, paddingVertical: 6, borderRadius: t.radius - 3, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? t.surface : 'transparent', borderTopWidth: on ? 1 : 0, borderTopColor: t.dark ? '#FFFFFF55' : '#FFFFFF', ...(on ? elevation(t, 1) : null) }}
           >
-            <Text style={{ color: on ? t.text : t.textMuted, fontWeight: on ? '700' : '500', fontSize: 13 * t.fontScale, textAlign: 'center' }}>{o.label}</Text>
+            <Text allowFontScaling maxFontSizeMultiplier={TYPE_MAX} style={{ color: on ? t.text : t.textMuted, fontWeight: on ? '700' : '500', fontSize: 13 * t.fontScale, textAlign: 'center' }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -436,26 +513,30 @@ export function Segmented<K extends string>({ options, value, onChange }: { opti
 /* ---------- Formulaires ---------- */
 export function Field({ label, hint, error, ...props }: TextInputProps & { label: string; hint?: string; error?: string }) {
   const t = useTheme();
+  const g = glassPaint(t, useReduceTransparency());
   return (
     <View style={{ gap: 5 }}>
       <T v="label" muted>
         {label}
       </T>
       <TextInput
+        {...props}
         placeholderTextColor={t.textMuted}
         accessibilityLabel={label}
         accessibilityHint={error ?? hint}
-        {...props}
+        allowFontScaling
+        maxFontSizeMultiplier={TYPE_MAX}
         style={[
           {
             minHeight: props.multiline ? 84 : 46,
             borderWidth: 1,
-            borderColor: error ? t.danger : t.border,
+            borderColor: error ? t.danger : g.borderColor,
+            borderTopColor: error ? t.danger : g.borderTopColor,
             borderRadius: t.radius - 2,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
+            paddingHorizontal: space.sm,
+            paddingVertical: space.xs,
             color: t.text,
-            backgroundColor: t.surface,
+            backgroundColor: g.backgroundColor,
             fontSize: 15 * t.fontScale,
             textAlignVertical: props.multiline ? 'top' : 'center',
           },
@@ -655,8 +736,10 @@ export function DemoMark({ force }: { force?: boolean }) {
 
 export function Stat({ label, value, sub, color, demo }: { label: string; value: string; sub?: string; color?: string; demo?: boolean }) {
   const t = useTheme();
+  const solid = useReduceTransparency();
+  const g = glassPaint(t, solid);
   return (
-    <View style={{ flexGrow: 1, flexBasis: 140, backgroundColor: t.surface, borderRadius: t.radius, borderWidth: StyleSheet.hairlineWidth, borderColor: t.border, padding: 12, gap: 2 }}>
+    <View style={{ flexGrow: 1, flexBasis: 140, backgroundColor: g.backgroundColor, borderRadius: t.radius, borderWidth: 1, borderColor: g.borderColor, borderTopColor: g.borderTopColor, padding: space.sm, gap: 2, ...verreBlur(solid), ...elevation(t, 1) }}>
       <Row style={{ justifyContent: 'space-between' }}>
         <T v="caption" muted style={{ flex: 1 }}>
           {label}
@@ -679,10 +762,12 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const solid = useReduceTransparency();
+  const reduceMotion = useReduceMotion();
+  const g = glassPaint(t, solid);
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType={reduceMotion ? 'none' : 'slide'} onRequestClose={onClose}>
       <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={onClose} style={{ flex: 1, backgroundColor: solid ? (t.dark ? '#000000' : '#3A3A3C') : alpha(t.bg, 0.55) }} />
-      <View style={{ backgroundColor: t.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%', paddingBottom: insets.bottom + 12 }}>
+      <View style={{ backgroundColor: g.backgroundColor, borderTopWidth: 1, borderTopColor: g.borderTopColor, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%', paddingBottom: insets.bottom + space.sm, ...verreBlur(solid) }}>
         <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center' }}>
           <Row style={{ padding: 16, paddingBottom: 6, justifyContent: 'space-between' }}>
             <T v="h2">{title}</T>

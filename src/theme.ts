@@ -1,7 +1,8 @@
 import type { Palette } from '@/kit/theme';
 
 /**
- * KaneOne — tokens uniques.
+ * KaneOne — palettes (sombre, jour, impression).
+ * Le voile translucide, l’arête et les espacements vivent dans `kit/verre`.
  * Sombre : fond #0A1020, sarcelle #3FB6A8, or #D9B26A.
  * `danger` est l’aplat ; `dangerText` est le rouge de texte (AA sur surface).
  * Variante `kanePrint` : impression et PDF.

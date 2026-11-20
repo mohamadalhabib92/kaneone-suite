@@ -9,6 +9,7 @@ import { FLAGS } from '../src/config';
 import { BASES, COUNTRIES, DOSSIER_MODULES, FINANCE_REPOS, GROUP, REQUIREMENTS, SITES, VEHICLE_CATEGORIES } from '../src/data/demo';
 import { SCENARIOS, scenarioProgress } from '../src/lib/scenarios';
 import { store } from '../src/state';
+import { glassComposite } from '../src/kit/verre';
 import { kane, kaneDay, kanePrint } from '../src/theme';
 
 function fail(message: string): never {
@@ -82,6 +83,17 @@ for (const [name, p] of [['sombre', kane], ['jour', kaneDay], ['impression', kan
   }
 }
 if (a11yFailures.length) fail('Contraste insuffisant :\n' + a11yFailures.join('\n'));
+
+for (const [name, p] of [['verre sombre', kane], ['verre jour', kaneDay], ['verre impression', kanePrint]] as const) {
+  const onPage = glassComposite(p.surface, p.bg);
+  const onWhite = glassComposite(p.surface, '#FFFFFF');
+  for (const [where, bg] of [['page', onPage], ['aplat clair', onWhite]] as const) {
+    for (const [inkName, ink] of [['texte', p.text], ['texte atténué', p.textMuted]] as const) {
+      const ratio = contrast(ink, bg);
+      if (ratio < 4.5) fail(`${name} ${inkName} / ${where} : ${ratio.toFixed(2)} < 4.5`);
+    }
+  }
+}
 
 // Réglage « Vibrations » : activé par défaut, clé dédiée, aucune donnée touchée.
 const VIBRATIONS_KEY = 'kaneone-suite:vibrations@v1';

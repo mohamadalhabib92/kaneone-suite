@@ -2,6 +2,8 @@ import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme, alpha } from '@/kit/theme';
+import { useReduceTransparency } from '@/kit/a11y';
+import { glassPaint } from '@/kit/verre';
 import { Banner, Card, DemoBadge, Ionicons, Row, Screen, T, type IconName } from '@/kit/ui';
 import { ROLES, store } from '@/state';
 import { dbReady } from '@/config';
@@ -10,17 +12,18 @@ import { FadeIn, Pop } from '@/kit/premium';
 export default function Welcome() {
   const t = useTheme();
   const router = useRouter();
+  const mark = glassPaint(t, useReduceTransparency());
   return (
     <Screen>
       <View style={{ alignItems: 'center', gap: 8, paddingTop: 24 }}>
         <Pop>
-          <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: alpha(t.primary, 0.14), borderWidth: 2, borderColor: t.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 72, height: 72, borderRadius: 20, backgroundColor: alpha(t.primary, 0.14), borderWidth: 1, borderColor: mark.borderColor, borderTopColor: mark.borderTopColor, borderTopWidth: 1, alignItems: 'center', justifyContent: 'center' }}>
             <T v="h1" color={t.text}>
               K1
             </T>
           </View>
         </Pop>
-        <T v="display" center>
+        <T v="display" center accessibilityRole="header">
           KaneOne Suite
         </T>
         <T muted center>

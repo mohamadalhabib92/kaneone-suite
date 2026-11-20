@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from './theme';
+import { glassPaint } from './verre';
 import { Button, Ionicons, Skeleton, T, type IconName } from './ui';
 import { ensureContrast, mix } from './contrast';
 import { haptic } from './haptics';
-import { announce } from './a11y';
+import { announce, useReduceTransparency } from './a11y';
 import { nativeDriver, SPRING, useEntrance, useSystemReduceMotion } from './motion';
 import { elevation, useReduceMotion, useTint } from './ui';
 
@@ -122,6 +123,7 @@ export function DelightProvider({ children }: { children: React.ReactNode }) {
 function CelebrationView({ c, onDone }: { c: Celebration; onDone: () => void }) {
   const t = useTheme();
   const reduce = useReduceMotion();
+  const g = glassPaint(t, useReduceTransparency());
   const tint = useTint();
   const pop = useRef(new Animated.Value(reduce ? 1 : 0)).current;
   const ring = useRef(new Animated.Value(0)).current;
@@ -143,9 +145,10 @@ function CelebrationView({ c, onDone }: { c: Celebration; onDone: () => void }) 
               paddingVertical: 22,
               paddingHorizontal: 28,
               borderRadius: 24,
-              backgroundColor: t.surface,
-              borderWidth: StyleSheet.hairlineWidth,
-              borderColor: t.border,
+              backgroundColor: g.backgroundColor,
+              borderWidth: 1,
+              borderColor: g.borderColor,
+              borderTopColor: g.borderTopColor,
               maxWidth: 320,
               opacity: pop,
               transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] }) }],
