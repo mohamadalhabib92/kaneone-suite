@@ -70,6 +70,9 @@ Ne mettez **jamais** de secret dans une variable `EXPO_PUBLIC_*` : elles sont em
 ## Limites connues
 
 - Pas de backend : les données vivent sur l’appareil (AsyncStorage / localStorage), sans synchronisation multi-utilisateur. Le « mode réel » Supabase (auth, RLS, sync) est en Phase 2.
+- Une écriture n’est tenue pour faite qu’après relecture identique. Si le stockage refuse (espace insuffisant), l’écran le dit et propose de réessayer : rien n’est marqué comme enregistré. Il n’y a pas de copie de restauration de l’appareil, et aucune promesse de zéro perte.
+- L’effacement des données locales et le remplacement d’un document illisible demandent deux actions séparées (Annuler, puis confirmation). Le document illisible n’est pas affiché ; son export est explicite.
+- Les portes d’une future bascule de schéma (instantané, restauration isolée, empreinte, comptes, retour arrière) ne s’exécutent pas sur la clé vivante `kaneone-suite@v1`.
 - Les rôles sont un sélecteur de démo, pas une sécurité : en production, l’isolation doit être faite côté base (RLS).
 - Taux de change et montants de démonstration ; pas de connexion bancaire.
 - PDF : impression navigateur sur le web ; sur mobile, export CSV (expo-print en Phase 2).

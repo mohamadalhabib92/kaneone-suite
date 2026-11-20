@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { kane } from '@/theme';
+import { reliefEdge } from './verre';
 import { reportCrash } from './crash';
 
 type Props = { children: React.ReactNode; title: string; allowBack?: boolean };
@@ -50,14 +51,26 @@ function FallbackView({ title, onRetry, allowBack }: { title: string; onRetry: (
           accessibilityRole="button"
           accessibilityLabel="Réessayer"
           onPress={onRetry}
-          style={({ pressed }) => ({
-            minHeight: 48,
-            borderRadius: 12,
-            backgroundColor: kane.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: pressed ? 0.85 : 1,
-          })}
+          style={({ pressed }) => {
+            const edge = reliefEdge(true, pressed);
+            return {
+              minHeight: 48,
+              borderRadius: 12,
+              backgroundColor: kane.primary,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderTopColor: edge.top,
+              borderBottomColor: edge.bottom,
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: pressed ? [{ translateY: 1 }] : [],
+              shadowColor: '#041018',
+              shadowOpacity: pressed ? 0.2 : 0.4,
+              shadowRadius: pressed ? 2 : 10,
+              shadowOffset: { width: 0, height: pressed ? 1 : 6 },
+              elevation: pressed ? 1 : 6,
+            };
+          }}
         >
           <Text style={{ color: kane.primaryText, fontWeight: '700', fontSize: 15 }}>Réessayer</Text>
         </Pressable>
@@ -74,15 +87,25 @@ function BackLink() {
       accessibilityRole="button"
       accessibilityLabel="Retour"
       onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-      style={({ pressed }) => ({
-        minHeight: 48,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: kane.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: pressed ? 0.85 : 1,
-      })}
+      style={({ pressed }) => {
+        const edge = reliefEdge(true, pressed);
+        return {
+          minHeight: 48,
+          borderRadius: 12,
+          backgroundColor: pressed ? kane.surface2 : 'transparent',
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderTopColor: edge.top,
+          borderBottomColor: edge.bottom,
+          borderLeftWidth: 1,
+          borderRightWidth: 1,
+          borderLeftColor: edge.side,
+          borderRightColor: edge.side,
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: pressed ? [{ translateY: 1 }] : [],
+        };
+      }}
     >
       <Text style={{ color: kane.text, fontWeight: '700', fontSize: 15 }}>Retour</Text>
     </Pressable>

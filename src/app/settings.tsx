@@ -1,31 +1,19 @@
 import React from 'react';
-import { View, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View } from 'react-native';
 import { useTheme } from '@/kit/theme';
-import { Badge, Banner, Button, Card, Chip, Row, Screen, Section, T, ToggleRow, useToast, Ionicons, type IconName } from '@/kit/ui';
+import { Badge, Banner, Card, Chip, Row, Screen, Section, T, ToggleRow, Ionicons, type IconName } from '@/kit/ui';
 import { isConfigured, maskValue } from '@/kit/config';
 import { CONFIG, DECISIONS, FLAGS, dbReady } from '@/config';
 import { ROLES, can, roleLabel, store } from '@/state';
 import { BackHeader } from '@/components/common';
+import { LocalErase } from '@/components/local-erase';
+import { haptic, setHapticsEnabled, useHapticsEnabled } from '@/kit/haptics';
 
 export default function Settings() {
   const t = useTheme();
-  const router = useRouter();
-  const toast = useToast();
+  const vibrations = useHapticsEnabled();
   const s = store.use();
   const missing = CONFIG.filter((c) => !isConfigured(c.value));
-  const confirmReset = () => {
-    const ok = Platform.OS === 'web' ? (globalThis as { confirm?: (m: string) => boolean }).confirm?.('Réinitialiser toutes les données de démo ?') ?? true : true;
-    if (!ok) return;
-    store.reset().then((done) => {
-      if (!done) {
-        toast('Réinitialisation impossible tant que les données locales ne sont pas chargées.', 'error');
-        return;
-      }
-      toast('Données de démo réinitialisées', 'success');
-      router.replace('/welcome');
-    });
-  };
   return (
     <Screen header={<BackHeader title="Paramètres" />}>
       <Section title="Rôle actif (démo)">
@@ -46,6 +34,26 @@ export default function Settings() {
             value={s.mode === 'real' && dbReady()}
             disabled={!dbReady()}
             onChange={(v) => store.set((x) => ({ ...x, mode: v ? 'real' : 'demo' }))}
+          />
+        </Card>
+      </Section>
+      <Section title="Apparence">
+        <Row wrap gap={6}>
+          <Chip label="Système" selected={(s.appearance ?? 'system') === 'system'} onPress={() => store.set((x) => ({ ...x, appearance: 'system' }))} />
+          <Chip label="Sombre" selected={s.appearance === 'dark'} onPress={() => store.set((x) => ({ ...x, appearance: 'dark' }))} />
+          <Chip label="Clair" selected={s.appearance === 'light'} onPress={() => store.set((x) => ({ ...x, appearance: 'light' }))} />
+        </Row>
+      </Section>
+      <Section title="Confort et accessibilité">
+        <Card>
+          <ToggleRow
+            label="Vibrations"
+            sub="Retour tactile lors des validations et des actions."
+            value={vibrations}
+            onChange={(on) => {
+              setHapticsEnabled(on);
+              if (on) haptic.select();
+            }}
           />
         </Card>
       </Section>
@@ -120,7 +128,7 @@ export default function Settings() {
           <T v="small">• Politique de confidentialité et conditions d’utilisation : à valider (nLPD). Cette version n’envoie aucune donnée.</T>
         </Card>
       </Section>
-      <Button title="Réinitialiser les données de démo" icon="refresh" kind="danger" onPress={confirmReset} />
+      <LocalErase />
     </Screen>
   );
 }

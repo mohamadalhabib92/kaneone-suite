@@ -1,7 +1,8 @@
 import type { Palette } from '@/kit/theme';
 
 /**
- * KaneOne — tokens uniques.
+ * KaneOne — palettes (sombre, jour, impression).
+ * Le voile translucide, l’arête et les espacements vivent dans `kit/verre`.
  * Sombre : fond #0A1020, sarcelle #3FB6A8, or #D9B26A.
  * `danger` est l’aplat ; `dangerText` est le rouge de texte (AA sur surface).
  * Variante `kanePrint` : impression et PDF.
@@ -60,6 +61,22 @@ export const kanePrint: Palette = {
   gap: 14,
   cardPad: 14,
 };
+
+/**
+ * Variante claire pour l’app (mode clair du système ou réglage « Clair »).
+ * Mêmes valeurs AA que la variante impression : sarcelle et or de la marque, assombris.
+ */
+export const kaneDay: Palette = { ...kanePrint };
+
+export type AppearancePref = 'system' | 'dark' | 'light';
+
+/** Palette selon le réglage et l’apparence système. Défaut : suit le système. */
+export function paletteFor(appearance: AppearancePref | undefined, scheme: string | null | undefined): Palette {
+  const a = appearance ?? 'system';
+  if (a === 'dark') return kane;
+  if (a === 'light') return kaneDay;
+  return scheme === 'light' ? kaneDay : kane;
+}
 
 export type Density = 'comfortable' | 'compact';
 
