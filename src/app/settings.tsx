@@ -16,9 +16,9 @@ export default function Settings() {
   const missing = CONFIG.filter((c) => !isConfigured(c.value));
   return (
     <Screen header={<BackHeader title="Paramètres" />}>
-      <Section title="Rôle actif (démo)">
+      <Section title="Rôle actif">
         <T v="small" muted>
-          En démonstration, le rôle remplace l’authentification. Rôle actuel : {roleLabel(s.role)}.
+          Le rôle choisi ouvre les écrans correspondants. Rôle actuel : {roleLabel(s.role)}.
         </T>
         <Row wrap gap={6}>
           {ROLES.map((r) => (
@@ -65,7 +65,7 @@ export default function Settings() {
       </Section>
       {can(s.role, 'admin') ? (
         <Section title="Configuration">
-          {missing.length ? <Banner kind="warning" title="Configuration manquante" text={`${missing.length} variable(s) à renseigner dans .env (voir README). L’application reste utilisable en démo locale. Réservé à l’administrateur.`} /> : null}
+          {missing.length ? <Banner kind="warning" title="Configuration manquante" text={`${missing.length} variable(s) à renseigner dans .env (voir README). L’application reste utilisable sur cet appareil. Réservé à l’administrateur.`} /> : null}
           <Card>
             {CONFIG.map((c) => (
               <View key={c.name} style={{ paddingVertical: 6, gap: 2 }}>
@@ -91,19 +91,16 @@ export default function Settings() {
             <T style={{ fontWeight: '700' }}>Décisions — à valider</T>
             {DECISIONS.map((d) => (
               <View key={d.name} style={{ paddingVertical: 4 }}>
-                <T v="mono">{d.name}</T>
-                <T v="caption" muted>
-                  {d.note}
-                </T>
+                <T v="small">{d.note}</T>
               </View>
             ))}
           </Card>
         </Section>
       ) : (
-        <Banner kind="info" title="Configuration réservée à l’administrateur" text="Le détail des variables et des décisions n’est pas affiché pour ce rôle. L’application reste en mode démo local." />
+        <Banner kind="info" title="Configuration réservée à l’administrateur" text="Le détail des variables et des décisions n’est pas affiché pour ce rôle. L’application reste utilisable sur cet appareil." />
       )}
       {can(s.role, 'admin') ? (
-        <Section title="Accès portail (démo)">
+        <Section title="Accès portail">
           <Card>
             {s.portalUsers.map((u) => (
               <Row key={u.id} style={{ paddingVertical: 6 }}>
@@ -124,7 +121,7 @@ export default function Settings() {
           <T v="small">• Aucune clé secrète n’est embarquée : seules des variables publiques EXPO_PUBLIC_* sont lues.</T>
           <T v="small">• En production, l’isolation des données par rôle doit être assurée côté base (politiques RLS), pas seulement dans l’interface.</T>
           <T v="small">• Les assistants IA, la synchro bancaire, la signature et les notifications push sont désactivés (Phase 2, côté serveur pour l’IA).</T>
-          <T v="small">• Données de démo stockées uniquement sur cet appareil. Support : YOUR_SUPPORT_EMAIL — à renseigner.</T>
+          <T v="small">• Les données restent sur cet appareil. Le contact support n’est pas renseigné.</T>
           <T v="small">• Politique de confidentialité et conditions d’utilisation : à valider (nLPD). Cette version n’envoie aucune donnée.</T>
         </Card>
       </Section>

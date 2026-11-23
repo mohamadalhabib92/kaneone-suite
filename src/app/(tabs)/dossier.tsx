@@ -26,7 +26,7 @@ export default function Dossier() {
     exportText(
       `kaneone-pack-comite-${new Date().toISOString().slice(0, 10)}-demo.csv`,
       toCSV([
-        ['# Pack comité d’investissement — Dossier Kane One — DONNÉES DE DÉMONSTRATION (Démo / Échantillon)'],
+        ['# Pack comité d’investissement — Dossier Kane One — DONNÉES D’EXEMPLE'],
         [`# Généré le ${fmtDate(new Date())} — ${all.validated}/${all.total} exigences validées — ${GROUP.sites} sites, ${GROUP.activeSites} actifs`],
         ['Module', 'Exigence', 'Statut', 'Responsable'],
         ...REQUIREMENTS.map((r) => {

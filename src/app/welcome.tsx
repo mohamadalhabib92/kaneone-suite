@@ -29,13 +29,13 @@ export default function Welcome() {
         <T muted center>
           OS family-office & multi-holding — pilotage, actifs, mobilité, finance, dossier.
         </T>
-        <DemoBadge label="Mode démo — données d’échantillon" />
+        <DemoBadge label="Données d’exemple" />
       </View>
       {!dbReady() ? (
         <Banner
           kind="info"
           title="Connexion non configurée"
-          text="Authentification et base de données (Supabase + RLS) non branchées : l’app fonctionne entièrement sur cet appareil avec des données de démonstration. Choisissez un rôle pour explorer."
+          text="Authentification et base de données non branchées : l’app fonctionne sur cet appareil avec des données d’exemple. Choisissez un rôle pour entrer."
         />
       ) : null}
       <T v="label" muted>
@@ -66,7 +66,7 @@ export default function Welcome() {
         </FadeIn>
       ))}
       <T v="small" muted center>
-        Démo : le choix du rôle remplace la connexion. En production, le rôle provient du compte (politiques RLS).
+        Le rôle choisi ouvre les écrans. Avec un compte, il viendra du compte.
       </T>
     </Screen>
   );

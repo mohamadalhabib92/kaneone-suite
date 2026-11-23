@@ -10,6 +10,7 @@ import { BASES, COUNTRIES, DOSSIER_MODULES, FINANCE_REPOS, GROUP, REQUIREMENTS, 
 import { SCENARIOS, scenarioProgress } from '../src/lib/scenarios';
 import { store } from '../src/state';
 import { glassComposite } from '../src/kit/verre';
+import { chainLookThrough, flattenOwnership, ownershipTree } from '../src/lib/ownership';
 import { kane, kaneDay, kanePrint } from '../src/theme';
 
 function fail(message: string): never {
@@ -181,6 +182,30 @@ for (const file of walk(join(root, 'src'))) {
 const envExample = readFileSync(join(root, '.env.example'), 'utf8');
 for (const re of banned) if (re.test(envExample)) fail(`.env.example ${re}`);
 if (!envExample.includes('YOUR_SENTRY_DSN') || !envExample.includes('EXPO_NO_CAPABILITY_SYNC=1')) fail('env example incomplet');
+
+const tree = ownershipTree();
+if (tree.kind !== 'groupe' || tree.lookThrough !== 100 || tree.direct !== 100) fail('racine de détention');
+if (chainLookThrough(80, 50) !== 40) fail('transparence 80 × 50');
+const nodes = flattenOwnership(tree);
+const spvNodes = nodes.filter((n) => n.kind === 'spv');
+const assetNodes = nodes.filter((n) => n.kind === 'actif');
+if (spvNodes.length !== 15 || assetNodes.length !== 15) fail(`arbre ${spvNodes.length}/${assetNodes.length}`);
+const stlouis = spvNodes.find((n) => n.id === 'spv-stlouis');
+const atar = spvNodes.find((n) => n.id === 'spv-atar');
+const dakhla = spvNodes.find((n) => n.id === 'spv-dkh');
+if (!stlouis || stlouis.direct !== 80 || stlouis.lookThrough !== 80) fail('Saint-Louis 80 %');
+if (!atar || atar.lookThrough !== 60) fail('Atar 60 %');
+if (!dakhla || dakhla.lookThrough !== 51) fail('Dakhla 51 %');
+const stlouisAsset = stlouis.children[0];
+if (!stlouisAsset || stlouisAsset.kind !== 'actif' || stlouisAsset.direct !== 100 || stlouisAsset.lookThrough !== 80) fail('actif Saint-Louis en transparence');
+if (nodes.some((n) => n.kind === 'pays' && n.direct !== null)) fail('un pays ne détient pas');
+if (nodes.some((n) => n.lookThrough < 0 || n.lookThrough > 100)) fail('transparence hors bornes');
+if (spvNodes.filter((n) => n.lookThrough < 100).length !== 5) fail('participations partielles');
+
+for (const file of walk(join(root, 'src', 'app')).concat(walk(join(root, 'src', 'components')))) {
+  if (!file.endsWith('.tsx') && !file.endsWith('.ts')) continue;
+  if (readFileSync(file, 'utf8').includes('YOUR_')) fail(`${file} affiche un placeholder YOUR_`);
+}
 
 console.log(`Passe 1 : ${SCENARIOS.length}/${SCENARIOS.length} scénarios, contraste AA, stockage ${store.key}`);
 console.log('Accessibilité : contraste AA du kit (sombre, jour, impression), vibrations activées par défaut');

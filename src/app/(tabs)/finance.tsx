@@ -30,7 +30,7 @@ export default function Finance() {
     exportText(
       `kaneone-ecritures-${period}-demo.csv`,
       toCSV([
-        [`# Écritures ${period} — DONNÉES DE DÉMONSTRATION (Démo / Échantillon) — montants en devise locale`],
+        [`# Écritures ${period} — DONNÉES D’EXEMPLE — montants en devise locale`],
         ['SPV', 'Compte', 'Libellé', 'Débit', 'Crédit', 'Devise', 'Intragroupe', 'Statut'],
         ...s.entries
           .filter((e) => e.period === period)
@@ -47,7 +47,7 @@ export default function Finance() {
       <DemoNotice />
       <Row wrap gap={10}>
         <Stat label="Référentiels" value={String(FINANCE_REPOS.length)} />
-        <Stat label={`EBITDA ${period}`} value={fmtCompactEUR(total.ebitda)} sub="consolidé, démo" demo color={t.primary} />
+        <Stat label={`EBITDA ${period}`} value={fmtCompactEUR(total.ebitda)} sub="consolidé, exemple" demo color={t.primary} />
         <Stat label="Écritures validées" value={`${validated}/${all}`} />
         <Stat label="Clôture" value={close?.lockedAt ? 'Verrouillée' : `Étape ${(close?.step ?? 0) + 1}/6`} />
       </Row>
@@ -145,7 +145,7 @@ export default function Finance() {
         <Button small kind="ghost" icon="print" title="Imprimer / PDF" onPress={() => (printPage() ? null : toast('PDF mobile : Phase 2 (expo-print). Utilisez l’export CSV.', 'info'))} />
       </Row>
       <T v="small" muted>
-        Aucun solde réel : montants générés pour la démonstration. Taux de change de démonstration (XOF : parité fixe).
+        Aucun solde réel : montants d’exemple. Le taux XOF est la parité fixe.
       </T>
       {lines.length ? null : null}
     </Screen>
@@ -161,7 +161,7 @@ export function LiasseTable({ period }: { period: string }) {
     <Card style={{ gap: 0 }}>
       <Row style={{ justifyContent: 'space-between', marginBottom: 6 }}>
         <T v="h3">Liasse de consolidation {period}</T>
-        <Badge label="EUR · IFRS · démo" color={t.accent} icon="flask" />
+        <Badge label="EUR · IFRS · exemple" color={t.accent} icon="flask" />
       </Row>
       <Row style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: t.border }}>
         <T v="caption" muted style={{ flex: 2 }}>
@@ -195,13 +195,13 @@ export function LiasseTable({ period }: { period: string }) {
           <T v="small" style={cell}>
             {fmtNumber(l.charges / 1000, 1)}
           </T>
-          <T v="small" tabular style={{ ...cell, fontWeight: '700' }} color={l.ebitda < 0 ? t.dangerText : t.text} accessibilityLabel={l.ebitda < 0 ? `${fmtNumber(l.ebitda / 1000, 1)} k€, négatif, démo` : `${fmtNumber(l.ebitda / 1000, 1)} k€, démo`}>
+          <T v="small" tabular style={{ ...cell, fontWeight: '700' }} color={l.ebitda < 0 ? t.dangerText : t.text} accessibilityLabel={l.ebitda < 0 ? `${fmtNumber(l.ebitda / 1000, 1)} k€, négatif, exemple` : `${fmtNumber(l.ebitda / 1000, 1)} k€, exemple`}>
             {fmtNumber(l.ebitda / 1000, 1)}
           </T>
         </Row>
       ))}
       <T v="caption" muted style={{ marginTop: 6 }}>
-        Démo / Échantillon. En k€, intragroupe éliminé. Quote-part groupe : {fmtNumber(total.share / 1000, 1)} k€. Un montant négatif porte le signe « − ».
+        Exemple. En k€, intragroupe éliminé. Quote-part groupe : {fmtNumber(total.share / 1000, 1)} k€. Un montant négatif porte le signe « − ».
       </T>
     </Card>
   );

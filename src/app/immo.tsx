@@ -39,7 +39,7 @@ function ImmoBody() {
       <NeedPerm perm="immo.manage" what="créer ou faire avancer des projets" />
       {can(s.role, 'immo.manage') ? <Button title="Nouveau projet" icon="add" full onPress={() => setOpen(true)} /> : null}
       <T v="small" muted>
-        Alerte de dépassement : YOUR_BUDGET_ALERT_PCT — à valider. Tant que ce seuil n’est pas fixé, seul un engagé supérieur au budget est signalé.
+        Le seuil d’alerte budget n’est pas fixé. Seul un engagé supérieur au budget est signalé.
       </T>
       {s.projects.length === 0 ? (
         <EmptyState

@@ -83,7 +83,7 @@ export const SCENARIOS: Scenario[] = [
     steps: [
       {
         label: 'Créer la mission (base Dakar, SUV blindé B-01)',
-        run: () => createMission({ title: 'Escorte VIP aéroport → Plateau', client: 'Client VIP #C21 (démo)', categoryId: 'armored', pax: 2, notes: 'Protocole sécurité renforcé', legs: [{ baseId: 'b-dkr', date: day(2), from: 'Aéroport AIBD', to: 'Bureaux Plateau', vehicleIds: ['v-a1'] }], tag: 'scn-armored' }),
+        run: () => createMission({ title: 'Escorte VIP aéroport → Plateau', client: 'Client VIP #C21', categoryId: 'armored', pax: 2, notes: 'Protocole sécurité renforcé', legs: [{ baseId: 'b-dkr', date: day(2), from: 'Aéroport AIBD', to: 'Bureaux Plateau', vehicleIds: ['v-a1'] }], tag: 'scn-armored' }),
         done: (s) => !!msBy(s, 'scn-armored'),
       },
       { label: 'Confirmer la mission', run: () => updateMission(msBy(store.get(), 'scn-armored')!.id, { status: 'confirmée' }, 'Mission confirmée'), done: (s) => ['confirmée', 'en cours', 'terminée'].includes(msBy(s, 'scn-armored')?.status ?? '') },
@@ -146,7 +146,7 @@ export const SCENARIOS: Scenario[] = [
         run: () =>
           createMission({
             title: 'Tournée investisseurs multi-pays',
-            client: 'Délégation #D04 (démo)',
+            client: 'Délégation #D04',
             categoryId: 'van',
             pax: 5,
             notes: 'Flotte mixte',

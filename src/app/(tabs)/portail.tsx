@@ -36,7 +36,7 @@ function PortailBody() {
   const log = s.accessLog ?? [];
 
   useEffect(() => {
-    const who = filtering ? (actor?.name ?? 'Portail (démo)') : 'aperçu interne';
+    const who = filtering ? (actor?.name ?? 'Portail') : 'aperçu interne';
     logAccess(`Consultation du portail — ${who}`);
   }, [filtering, actor?.id]);
 
@@ -47,7 +47,7 @@ function PortailBody() {
         <Banner
           kind="warning"
           title="Authentification non configurée"
-          text="En production, chaque membre ou partenaire se connecte avec son compte (Supabase Auth + RLS) et ne voit que ce qui lui est partagé. Ici : accès de démonstration, filtré par le périmètre choisi."
+          text="Sans compte, chaque membre ou partenaire ne voit que le périmètre choisi ici. Ce filtre n’est pas une politique d’accès."
           icon="lock-closed"
         />
       ) : null}
@@ -59,7 +59,7 @@ function PortailBody() {
         </T>
       )}
 
-      <Section title="Identité de démonstration">
+      <Section title="Identité">
         <Row wrap gap={6}>
           {!restricted ? <Chip label="Vue complète" selected={preview === 'all'} onPress={() => setPreview('all')} /> : null}
           {s.portalUsers.map((u) => (
@@ -95,7 +95,7 @@ function PortailBody() {
       ) : null}
 
       {allow('Dossier Kane One') ? (
-        <Stat label="Dossier Kane One" value={`${Math.round((dossier.validated / Math.max(1, dossier.total)) * 100)} %`} sub={`${DOSSIER_MODULES.length} modules · Démo`} demo />
+        <Stat label="Dossier Kane One" value={`${Math.round((dossier.validated / Math.max(1, dossier.total)) * 100)} %`} sub={`${DOSSIER_MODULES.length} modules · exemple`} demo />
       ) : null}
 
       {allow('Projets immobiliers') ? (
@@ -130,7 +130,7 @@ function PortailBody() {
                   <View style={{ flex: 1 }}>
                     <T style={{ fontWeight: '600' }}>{d.title}</T>
                     <T v="caption" muted>
-                      {d.kind} · {fmtDate(d.at)} · Démo
+                      {d.kind} · {fmtDate(d.at)} · exemple
                     </T>
                   </View>
                 </Row>
@@ -173,7 +173,7 @@ function PortailBody() {
               </T>
             </View>
           ))}
-          <Field label="Écrire au family office" value={msg} onChangeText={setMsg} multiline placeholder="Votre message (stocké localement en démo)" />
+          <Field label="Écrire au family office" value={msg} onChangeText={setMsg} multiline placeholder="Votre message (stocké sur cet appareil)" />
           <Button
             small
             title="Envoyer"
@@ -199,7 +199,7 @@ function PortailBody() {
             </Card>
           ))}
           <T v="small" muted>
-            Journal local de démonstration. L’audit serveur append-only (conservation 10 ans) est prévu avec le backend — à valider.
+            Journal local de cet appareil. L’audit serveur (conservation 10 ans) n’est pas branché.
           </T>
         </Section>
       ) : null}

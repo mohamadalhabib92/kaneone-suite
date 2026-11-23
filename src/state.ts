@@ -5,7 +5,7 @@ import type { AppearancePref, Density } from '@/theme';
 
 export type Role = 'admin' | 'cfo' | 'ops' | 'mobility' | 'portail';
 export const ROLES: { id: Role; label: string; sub: string; icon: string }[] = [
-  { id: 'admin', label: 'Administrateur', sub: 'Configuration, utilisateurs, sécurité, bascule démo', icon: 'key' },
+  { id: 'admin', label: 'Administrateur', sub: 'Configuration, utilisateurs, sécurité, bascule de mode', icon: 'key' },
   { id: 'cfo', label: 'Directeur financier (CFO)', sub: 'Finance, consolidation, clôture, exports', icon: 'stats-chart' },
   { id: 'ops', label: 'Opérations', sub: 'Pilotage sites, GMAO, travaux, incidents', icon: 'construct' },
   { id: 'mobility', label: 'Kane Prestige Mobility', sub: 'Missions, flotte, bases, itinéraires', icon: 'car-sport' },
@@ -97,7 +97,7 @@ export type Entry = {
 export const CLOSE_STEPS = [
   { key: 'entries', label: 'Valider les écritures du mois', sub: 'Toutes les écritures en brouillon passent en « validée ».' },
   { key: 'interco', label: 'Rapprocher et éliminer l’intragroupe', sub: 'Frais de gestion facturés par le siège neutralisés.' },
-  { key: 'fx', label: 'Convertir en EUR', sub: 'Taux de clôture (démo) appliqués à chaque devise locale.' },
+  { key: 'fx', label: 'Convertir en EUR', sub: 'Taux de clôture d’exemple appliqués à chaque devise locale.' },
   { key: 'conso', label: 'Consolider (IFRS, EUR)', sub: 'Agrégation des SPV selon le pourcentage de détention.' },
   { key: 'liasse', label: 'Générer la liasse de consolidation', sub: 'Compte de résultat par entité + total groupe.' },
   { key: 'export', label: 'Exporter et verrouiller la période', sub: 'Export CSV de la liasse puis verrouillage (CFO).' },
@@ -175,7 +175,7 @@ function seedReqStatus(): Record<string, ReqStatus> {
   return r;
 }
 
-const ev = (text: string, by = 'Démo', at = Date.now()): Ev => ({ at, text, by });
+const ev = (text: string, by = 'Exemple', at = Date.now()): Ev => ({ at, text, by });
 
 function initial(): State {
   const now = Date.now();
@@ -190,15 +190,15 @@ function initial(): State {
     woSeq: 4,
     missionSeq: 3,
     wos: [
-      { id: 'wo-1', ref: 'OT-0001', title: 'Fuite robinet chambre 12', siteId: 'saly', kind: 'curatif', priority: 'normale', status: 'clôturé', assignee: 'p-ops1', createdAt: now - 6 * D, dueAt: now - 3 * D, resolvedAt: now - 5 * D, closedAt: now - 5 * D, history: [ev('OT créé', 'Démo', now - 6 * D), ev('Clôturé', 'Démo', now - 5 * D)] },
-      { id: 'wo-2', ref: 'OT-0002', title: 'Groupe électrogène : alarme température', siteId: 'nkc', equipmentId: 'eq-nkc-gen', kind: 'curatif', priority: 'haute', status: 'en cours', assignee: 'p-ops2', createdAt: now - 10 * H, dueAt: now + 14 * H, history: [ev('OT créé', 'Démo', now - 10 * H), ev('Assigné', 'Démo', now - 9 * H)] },
-      { id: 'wo-3', ref: 'OT-0003', title: 'Ascenseur A : bruit anormal', siteId: 'dakar', equipmentId: 'eq-dkr-elev', kind: 'curatif', priority: 'haute', status: 'nouveau', createdAt: now - 30 * H, dueAt: now - 6 * H, history: [ev('OT créé', 'Démo', now - 30 * H)] },
-      { id: 'wo-4', ref: 'OT-0004', title: 'Bornes quai : remplacement prise', siteId: 'dxb', equipmentId: 'eq-dxb-dock', kind: 'curatif', priority: 'basse', status: 'assigné', assignee: 'p-ops3', createdAt: now - 2 * D, dueAt: now + 5 * D, history: [ev('OT créé', 'Démo', now - 2 * D)] },
+      { id: 'wo-1', ref: 'OT-0001', title: 'Fuite robinet chambre 12', siteId: 'saly', kind: 'curatif', priority: 'normale', status: 'clôturé', assignee: 'p-ops1', createdAt: now - 6 * D, dueAt: now - 3 * D, resolvedAt: now - 5 * D, closedAt: now - 5 * D, history: [ev('OT créé', 'Exemple', now - 6 * D), ev('Clôturé', 'Exemple', now - 5 * D)] },
+      { id: 'wo-2', ref: 'OT-0002', title: 'Groupe électrogène : alarme température', siteId: 'nkc', equipmentId: 'eq-nkc-gen', kind: 'curatif', priority: 'haute', status: 'en cours', assignee: 'p-ops2', createdAt: now - 10 * H, dueAt: now + 14 * H, history: [ev('OT créé', 'Exemple', now - 10 * H), ev('Assigné', 'Exemple', now - 9 * H)] },
+      { id: 'wo-3', ref: 'OT-0003', title: 'Ascenseur A : bruit anormal', siteId: 'dakar', equipmentId: 'eq-dkr-elev', kind: 'curatif', priority: 'haute', status: 'nouveau', createdAt: now - 30 * H, dueAt: now - 6 * H, history: [ev('OT créé', 'Exemple', now - 30 * H)] },
+      { id: 'wo-4', ref: 'OT-0004', title: 'Bornes quai : remplacement prise', siteId: 'dxb', equipmentId: 'eq-dxb-dock', kind: 'curatif', priority: 'basse', status: 'assigné', assignee: 'p-ops3', createdAt: now - 2 * D, dueAt: now + 5 * D, history: [ev('OT créé', 'Exemple', now - 2 * D)] },
     ],
     missions: [
-      { id: 'm-1', ref: 'MS-0001', title: 'Transfert délégation aéroport → siège', client: 'Client VIP #A12 (démo)', categoryId: 'sedan', pax: 2, status: 'terminée', notes: '', legs: [{ baseId: 'b-gva', date: day(-3), from: 'Aéroport de Genève', to: 'Siège Genève', vehicleIds: ['v-s1'] }], createdAt: now - 5 * D, history: [ev('Mission créée', 'Démo', now - 5 * D)] },
-      { id: 'm-2', ref: 'MS-0002', title: 'Croisière côtière invités', client: 'Client VIP #B07 (démo)', categoryId: 'yacht', pax: 8, status: 'confirmée', notes: 'Équipage 4 personnes', legs: [{ baseId: 'b-dxb', date: day(4), from: 'Marina Dubaï', to: 'Côte (aller-retour)', vehicleIds: ['v-y1'] }], createdAt: now - 2 * D, history: [ev('Mission créée', 'Démo', now - 2 * D)] },
-      { id: 'm-3', ref: 'MS-0003', title: 'Visite de site Agadir', client: 'Partenaire #P03 (démo)', categoryId: 'van', pax: 5, status: 'planifiée', notes: '', legs: [{ baseId: 'b-aga', date: day(9), from: 'Aéroport d’Agadir', to: 'Showroom Agadir', vehicleIds: ['v-v2'] }], createdAt: now - D, history: [ev('Mission créée', 'Démo', now - D)] },
+      { id: 'm-1', ref: 'MS-0001', title: 'Transfert délégation aéroport → siège', client: 'Client VIP #A12', categoryId: 'sedan', pax: 2, status: 'terminée', notes: '', legs: [{ baseId: 'b-gva', date: day(-3), from: 'Aéroport de Genève', to: 'Siège Genève', vehicleIds: ['v-s1'] }], createdAt: now - 5 * D, history: [ev('Mission créée', 'Exemple', now - 5 * D)] },
+      { id: 'm-2', ref: 'MS-0002', title: 'Croisière côtière invités', client: 'Client VIP #B07', categoryId: 'yacht', pax: 8, status: 'confirmée', notes: 'Équipage 4 personnes', legs: [{ baseId: 'b-dxb', date: day(4), from: 'Marina Dubaï', to: 'Côte (aller-retour)', vehicleIds: ['v-y1'] }], createdAt: now - 2 * D, history: [ev('Mission créée', 'Exemple', now - 2 * D)] },
+      { id: 'm-3', ref: 'MS-0003', title: 'Visite de site Agadir', client: 'Partenaire #P03', categoryId: 'van', pax: 5, status: 'planifiée', notes: '', legs: [{ baseId: 'b-aga', date: day(9), from: 'Aéroport d’Agadir', to: 'Showroom Agadir', vehicleIds: ['v-v2'] }], createdAt: now - D, history: [ev('Mission créée', 'Exemple', now - D)] },
     ],
     projects: [
       {
@@ -227,12 +227,12 @@ function initial(): State {
     closes: {},
     reqStatus: seedReqStatus(),
     messages: [
-      { id: 'msg-1', at: now - 3 * D, from: 'Family office (démo)', text: 'Bienvenue sur le portail. Les indicateurs affichés sont des données de démonstration.' },
+      { id: 'msg-1', at: now - 3 * D, from: 'Family office', text: 'Bienvenue sur le portail. Les indicateurs affichés sont des données d’exemple.' },
     ],
     portalUsers: [
-      { id: 'pu-1', name: 'Membre famille #1 (démo)', kind: 'famille', access: ['KPIs groupe', 'Dossier Kane One'] },
-      { id: 'pu-2', name: 'Partenaire bancaire (démo)', kind: 'partenaire', access: ['KPIs groupe', 'Liasse'] },
-      { id: 'pu-3', name: 'Partenaire immobilier (démo)', kind: 'partenaire', access: ['Projets immobiliers'] },
+      { id: 'pu-1', name: 'Membre famille #1', kind: 'famille', access: ['KPIs groupe', 'Dossier Kane One'] },
+      { id: 'pu-2', name: 'Partenaire bancaire', kind: 'partenaire', access: ['KPIs groupe', 'Liasse'] },
+      { id: 'pu-3', name: 'Partenaire immobilier', kind: 'partenaire', access: ['Projets immobiliers'] },
     ],
     docs: [],
     pmDone: {},
@@ -248,7 +248,7 @@ const who = () => roleLabel(store.get().role);
 export function logAccess(action: string) {
   store.set((s) => {
     const actor =
-      s.role === 'portail' ? (s.portalUsers.find((u) => u.id === s.portalActorId)?.name ?? 'Portail (démo)') : roleLabel(s.role);
+      s.role === 'portail' ? (s.portalUsers.find((u) => u.id === s.portalActorId)?.name ?? 'Portail') : roleLabel(s.role);
     const entry: AccessEvent = { id: uid('al'), at: Date.now(), actor, action };
     return { ...s, accessLog: [entry, ...(s.accessLog ?? [])].slice(0, 80) };
   });
@@ -380,7 +380,7 @@ export function closeStep(period: string, stepIndex: number) {
     };
     const docs =
       stepIndex === 4
-        ? [{ id: uid('doc'), title: `Liasse de consolidation ${period} (démo)`, at: Date.now(), kind: 'Liasse' }, ...s.docs]
+        ? [{ id: uid('doc'), title: `Liasse de consolidation ${period}`, at: Date.now(), kind: 'Liasse' }, ...s.docs]
         : s.docs;
     return { ...s, entries, docs, closes: { ...s.closes, [period]: done } };
   });

@@ -18,14 +18,15 @@ export default function Plus() {
           <ListItem icon="business" title="Kane Immo" sub="Projets, phases, budget, jalons, risques" onPress={() => router.push('/immo')} />
           <ListItem icon="lock-closed" title="Clôture mensuelle" sub="Guidée, 6 étapes (CFO)" onPress={() => router.push('/close')} />
           <ListItem icon="people" title="Portail famille & partenaires" sub="Aperçu de la vue externe" onPress={() => router.push('/portail')} />
-          <ListItem icon="play-circle" title="Scénarios de démonstration" sub={`${passed}/${SCENARIOS.length} validés`} onPress={() => router.push('/scenarios')} />
+          <ListItem icon="git-network" title="Détention" sub="Arbre des entités et pourcentages en transparence" onPress={() => router.push('/ownership')} />
+          <ListItem icon="play-circle" title="Scénarios guidés" sub={`${passed}/${SCENARIOS.length} validés`} onPress={() => router.push('/scenarios')} />
         </Card>
       ) : null}
       <Card style={{ paddingVertical: 4 }}>
-        <ListItem icon="settings" title="Paramètres" sub="Rôle, configuration, données de démo" onPress={() => router.push('/settings')} />
+        <ListItem icon="settings" title="Paramètres" sub="Rôle, configuration, données de cet appareil" onPress={() => router.push('/settings')} />
       </Card>
       <T v="small" muted center>
-        KaneOne Suite — démonstration locale. Aucune donnée n’est envoyée à un serveur.
+        KaneOne Suite. Aucune donnée n’est envoyée à un serveur.
       </T>
     </Screen>
   );

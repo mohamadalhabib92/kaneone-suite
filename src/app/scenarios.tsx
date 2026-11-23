@@ -21,15 +21,15 @@ export default function Scenarios() {
       step.run();
       toast(step.label, 'success');
     } catch {
-      toast('Étape impossible dans l’état actuel — réinitialisez les données de démo.', 'error');
+      toast('Étape impossible dans l’état actuel — réinitialisez les données de cet appareil.', 'error');
     }
   };
   const passed = SCENARIOS.filter((x) => scenarioProgress(x, s).passed).length;
   return (
-    <Screen header={<BackHeader title="Scénarios de démonstration" subtitle={`${passed}/${SCENARIOS.length} validés`} />}>
+    <Screen header={<BackHeader title="Scénarios guidés" subtitle={`${passed}/${SCENARIOS.length} validés`} />}>
       <DemoNotice />
       <T v="small" muted>
-        Chaque scénario s’exécute pas à pas avec le rôle indiqué (le rôle actif est changé automatiquement). Les actions modifient les données locales de démo.
+        Chaque scénario s’exécute pas à pas avec le rôle indiqué (le rôle actif est changé automatiquement). Les actions modifient les données de cet appareil.
       </T>
       {SCENARIOS.map((sc) => {
         const pr = scenarioProgress(sc, s);

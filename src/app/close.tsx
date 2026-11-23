@@ -15,7 +15,7 @@ export function exportLiasse(period: string) {
   return exportText(
     `kaneone-liasse-${period}-demo.csv`,
     toCSV([
-      [`# Liasse de consolidation ${period} — IFRS — EUR — DONNÉES DE DÉMONSTRATION (Démo / Échantillon)`],
+      [`# Liasse de consolidation ${period} — IFRS — EUR — DONNÉES D’EXEMPLE`],
       ['Entité', 'Pays', 'Détention %', 'CA (EUR)', 'Charges (EUR)', 'EBITDA (EUR)', 'Quote-part groupe (EUR)'],
       ...[...lines, total].map((l) => [l.name, l.country, l.ownership, Math.round(l.revenue), Math.round(l.charges), Math.round(l.ebitda), Math.round(l.share)]),
     ]),

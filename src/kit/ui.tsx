@@ -188,9 +188,9 @@ export function Header({ title, subtitle, right, left }: { title: string; subtit
         ...verreBlur(solid),
       }}
     >
-      <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.xs, flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+      <View style={{ width: '100%', maxWidth: 820, alignSelf: 'center', paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.xs, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.xs }}>
         {left}
-        <View style={{ flex: 1 }}>
+        <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 200, minWidth: 160 }}>
           <T v="h1" numberOfLines={3} accessibilityRole="header">
             {title}
           </T>
@@ -200,7 +200,7 @@ export function Header({ title, subtitle, right, left }: { title: string; subtit
             </T>
           ) : null}
         </View>
-        {right}
+        {right ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs, marginLeft: 'auto' }}>{right}</View> : null}
       </View>
     </View>
   );
@@ -627,7 +627,7 @@ export function Banner({ kind = 'info', title, text, icon, action }: { kind?: 'i
   );
 }
 
-export function DemoBadge({ label = 'Démo / Échantillon' }: { label?: string }) {
+export function DemoBadge({ label = 'Exemple' }: { label?: string }) {
   const t = useTheme();
   return <Badge label={label} color={t.accent} icon="flask" />;
 }
@@ -728,8 +728,8 @@ export function DemoMark({ force }: { force?: boolean }) {
   const on = force !== undefined ? force : ctx;
   if (!on) return null;
   return (
-    <Text accessibilityLabel="Démo / Échantillon" style={{ color: t.accent, fontSize: 10 * t.fontScale, fontWeight: '800' }}>
-      Démo
+    <Text accessibilityLabel="Exemple" style={{ color: t.accent, fontSize: 10 * t.fontScale, fontWeight: '800' }}>
+      Exemple
     </Text>
   );
 }

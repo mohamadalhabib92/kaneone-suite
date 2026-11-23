@@ -135,9 +135,9 @@ export const FLEET: Vehicle[] = [
   { id: 'v-s2', label: 'Berline L-02', categoryId: 'sedan', baseId: 'b-gva' },
   { id: 'v-s3', label: 'Berline L-03', categoryId: 'sedan', baseId: 'b-dxb' },
   { id: 'v-s4', label: 'Berline L-04', categoryId: 'sedan', baseId: 'b-rak' },
-  { id: 'v-a1', label: 'SUV blindé B-01', categoryId: 'armored', baseId: 'b-dkr', armorLevel: 'VR7 (démo)' },
-  { id: 'v-a2', label: 'SUV blindé B-02', categoryId: 'armored', baseId: 'b-nkc', armorLevel: 'VR7 (démo)' },
-  { id: 'v-a3', label: 'SUV blindé B-03', categoryId: 'armored', baseId: 'b-dxb', armorLevel: 'VR6 (démo)' },
+  { id: 'v-a1', label: 'SUV blindé B-01', categoryId: 'armored', baseId: 'b-dkr', armorLevel: 'VR7' },
+  { id: 'v-a2', label: 'SUV blindé B-02', categoryId: 'armored', baseId: 'b-nkc', armorLevel: 'VR7' },
+  { id: 'v-a3', label: 'SUV blindé B-03', categoryId: 'armored', baseId: 'b-dxb', armorLevel: 'VR6' },
   { id: 'v-v1', label: 'Van VIP V-01', categoryId: 'van', baseId: 'b-saly' },
   { id: 'v-v2', label: 'Van VIP V-02', categoryId: 'van', baseId: 'b-aga' },
   { id: 'v-v3', label: 'Van VIP V-03', categoryId: 'van', baseId: 'b-dxb' },
@@ -234,12 +234,12 @@ export const PREVENTIVE: { id: string; equipmentId: string; task: string; everyD
 ];
 
 export const PEOPLE: { id: string; name: string; role: 'ops' | 'mobility' | 'cfo' | 'admin'; siteId?: string }[] = [
-  { id: 'p-ops1', name: 'Technicien Saly (démo)', role: 'ops', siteId: 'saly' },
-  { id: 'p-ops2', name: 'Frigoriste Nouakchott (démo)', role: 'ops', siteId: 'nkc' },
-  { id: 'p-ops3', name: 'Responsable maintenance groupe (démo)', role: 'ops' },
-  { id: 'p-ops4', name: 'Conducteur de travaux Taghazout (démo)', role: 'ops', siteId: 'tgz' },
-  { id: 'p-mob1', name: 'Dispatcher mobilité (démo)', role: 'mobility' },
-  { id: 'p-cfo1', name: 'Directeur financier (démo)', role: 'cfo' },
+  { id: 'p-ops1', name: 'Technicien Saly', role: 'ops', siteId: 'saly' },
+  { id: 'p-ops2', name: 'Frigoriste Nouakchott', role: 'ops', siteId: 'nkc' },
+  { id: 'p-ops3', name: 'Responsable maintenance groupe', role: 'ops' },
+  { id: 'p-ops4', name: 'Conducteur de travaux Taghazout', role: 'ops', siteId: 'tgz' },
+  { id: 'p-mob1', name: 'Dispatcher mobilité', role: 'mobility' },
+  { id: 'p-cfo1', name: 'Directeur financier', role: 'cfo' },
 ];
 
 export const countryOf = (id: CountryId) => COUNTRIES.find((c) => c.id === id)!;
