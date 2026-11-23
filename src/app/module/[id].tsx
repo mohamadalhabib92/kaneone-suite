@@ -45,6 +45,7 @@ export default function ModuleScreen() {
               onPress={() => setReq(r.id, NEXT[cur])}
               accessibilityRole="button"
               accessibilityLabel={`${r.title}, statut ${cur}`}
+              accessibilityState={{ disabled: !edit }}
               style={({ pressed }) => ({ minHeight: 48, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: t.border, backgroundColor: pressed ? alpha(t.primary, 0.08) : 'transparent' })}
             >
               <Ionicons name={cur === 'validé' ? 'checkmark-circle' : cur === 'en cours' ? 'time' : 'ellipse-outline'} size={22} color={color(cur)} />

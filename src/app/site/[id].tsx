@@ -17,7 +17,7 @@ export default function SiteScreen() {
   if (!site) {
     return (
       <Screen header={<BackHeader title="Site" />}>
-        <EmptyState icon="alert-circle" title="Site introuvable" text="Ce site n’existe pas dans le jeu de démonstration." />
+        <EmptyState icon="alert-circle" title="Site introuvable" text="Ce site n’est pas dans les entités de l’application." />
       </Screen>
     );
   }
@@ -60,7 +60,7 @@ export default function SiteScreen() {
               <View style={{ flex: 1 }}>
                 <T style={{ fontWeight: '700' }}>{a.name}</T>
                 <T v="small" muted>
-                  {ASSET_TYPE[a.type]} · valeur {fmtCompactEUR(a.valueK * 1000)} (démo)
+                  {ASSET_TYPE[a.type]} · valeur {fmtCompactEUR(a.valueK * 1000)} (exemple)
                 </T>
               </View>
             </Row>

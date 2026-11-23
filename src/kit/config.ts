@@ -11,7 +11,7 @@ export function isConfigured(value: string | undefined | null): boolean {
 export type ConfigEntry = { name: string; value: string; secret?: boolean; phase?: string; note?: string };
 
 export function maskValue(e: ConfigEntry): string {
-  if (!isConfigured(e.value)) return e.value || '(vide)';
+  if (!isConfigured(e.value)) return 'non renseigné';
   if (e.secret) return '••••••••';
   return e.value.length > 32 ? e.value.slice(0, 29) + '…' : e.value;
 }

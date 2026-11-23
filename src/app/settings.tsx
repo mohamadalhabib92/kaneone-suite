@@ -1,36 +1,24 @@
 import React from 'react';
-import { View, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View } from 'react-native';
 import { useTheme } from '@/kit/theme';
-import { Badge, Banner, Button, Card, Chip, Row, Screen, Section, T, ToggleRow, useToast, Ionicons, type IconName } from '@/kit/ui';
+import { Badge, Banner, Card, Chip, Row, Screen, Section, T, ToggleRow, Ionicons, type IconName } from '@/kit/ui';
 import { isConfigured, maskValue } from '@/kit/config';
 import { CONFIG, DECISIONS, FLAGS, dbReady } from '@/config';
 import { ROLES, can, roleLabel, store } from '@/state';
 import { BackHeader } from '@/components/common';
+import { LocalErase } from '@/components/local-erase';
+import { haptic, setHapticsEnabled, useHapticsEnabled } from '@/kit/haptics';
 
 export default function Settings() {
   const t = useTheme();
-  const router = useRouter();
-  const toast = useToast();
+  const vibrations = useHapticsEnabled();
   const s = store.use();
   const missing = CONFIG.filter((c) => !isConfigured(c.value));
-  const confirmReset = () => {
-    const ok = Platform.OS === 'web' ? (globalThis as { confirm?: (m: string) => boolean }).confirm?.('Réinitialiser toutes les données de démo ?') ?? true : true;
-    if (!ok) return;
-    store.reset().then((done) => {
-      if (!done) {
-        toast('Réinitialisation impossible tant que les données locales ne sont pas chargées.', 'error');
-        return;
-      }
-      toast('Données de démo réinitialisées', 'success');
-      router.replace('/welcome');
-    });
-  };
   return (
     <Screen header={<BackHeader title="Paramètres" />}>
-      <Section title="Rôle actif (démo)">
+      <Section title="Rôle actif">
         <T v="small" muted>
-          En démonstration, le rôle remplace l’authentification. Rôle actuel : {roleLabel(s.role)}.
+          Le rôle choisi ouvre les écrans correspondants. Rôle actuel : {roleLabel(s.role)}.
         </T>
         <Row wrap gap={6}>
           {ROLES.map((r) => (
@@ -49,6 +37,26 @@ export default function Settings() {
           />
         </Card>
       </Section>
+      <Section title="Apparence">
+        <Row wrap gap={6}>
+          <Chip label="Système" selected={(s.appearance ?? 'system') === 'system'} onPress={() => store.set((x) => ({ ...x, appearance: 'system' }))} />
+          <Chip label="Sombre" selected={s.appearance === 'dark'} onPress={() => store.set((x) => ({ ...x, appearance: 'dark' }))} />
+          <Chip label="Clair" selected={s.appearance === 'light'} onPress={() => store.set((x) => ({ ...x, appearance: 'light' }))} />
+        </Row>
+      </Section>
+      <Section title="Confort et accessibilité">
+        <Card>
+          <ToggleRow
+            label="Vibrations"
+            sub="Retour tactile lors des validations et des actions."
+            value={vibrations}
+            onChange={(on) => {
+              setHapticsEnabled(on);
+              if (on) haptic.select();
+            }}
+          />
+        </Card>
+      </Section>
       <Section title="Densité">
         <Row wrap gap={6}>
           <Chip label="Confortable" selected={(s.density ?? 'comfortable') === 'comfortable'} onPress={() => store.set((x) => ({ ...x, density: 'comfortable' }))} />
@@ -57,7 +65,7 @@ export default function Settings() {
       </Section>
       {can(s.role, 'admin') ? (
         <Section title="Configuration">
-          {missing.length ? <Banner kind="warning" title="Configuration manquante" text={`${missing.length} variable(s) à renseigner dans .env (voir README). L’application reste utilisable en démo locale. Réservé à l’administrateur.`} /> : null}
+          {missing.length ? <Banner kind="warning" title="Configuration manquante" text={`${missing.length} variable(s) à renseigner dans .env (voir README). L’application reste utilisable sur cet appareil. Réservé à l’administrateur.`} /> : null}
           <Card>
             {CONFIG.map((c) => (
               <View key={c.name} style={{ paddingVertical: 6, gap: 2 }}>
@@ -83,19 +91,16 @@ export default function Settings() {
             <T style={{ fontWeight: '700' }}>Décisions — à valider</T>
             {DECISIONS.map((d) => (
               <View key={d.name} style={{ paddingVertical: 4 }}>
-                <T v="mono">{d.name}</T>
-                <T v="caption" muted>
-                  {d.note}
-                </T>
+                <T v="small">{d.note}</T>
               </View>
             ))}
           </Card>
         </Section>
       ) : (
-        <Banner kind="info" title="Configuration réservée à l’administrateur" text="Le détail des variables et des décisions n’est pas affiché pour ce rôle. L’application reste en mode démo local." />
+        <Banner kind="info" title="Configuration réservée à l’administrateur" text="Le détail des variables et des décisions n’est pas affiché pour ce rôle. L’application reste utilisable sur cet appareil." />
       )}
       {can(s.role, 'admin') ? (
-        <Section title="Accès portail (démo)">
+        <Section title="Accès portail">
           <Card>
             {s.portalUsers.map((u) => (
               <Row key={u.id} style={{ paddingVertical: 6 }}>
@@ -116,11 +121,11 @@ export default function Settings() {
           <T v="small">• Aucune clé secrète n’est embarquée : seules des variables publiques EXPO_PUBLIC_* sont lues.</T>
           <T v="small">• En production, l’isolation des données par rôle doit être assurée côté base (politiques RLS), pas seulement dans l’interface.</T>
           <T v="small">• Les assistants IA, la synchro bancaire, la signature et les notifications push sont désactivés (Phase 2, côté serveur pour l’IA).</T>
-          <T v="small">• Données de démo stockées uniquement sur cet appareil. Support : YOUR_SUPPORT_EMAIL — à renseigner.</T>
+          <T v="small">• Les données restent sur cet appareil. Le contact support n’est pas renseigné.</T>
           <T v="small">• Politique de confidentialité et conditions d’utilisation : à valider (nLPD). Cette version n’envoie aucune donnée.</T>
         </Card>
       </Section>
-      <Button title="Réinitialiser les données de démo" icon="refresh" kind="danger" onPress={confirmReset} />
+      <LocalErase />
     </Screen>
   );
 }

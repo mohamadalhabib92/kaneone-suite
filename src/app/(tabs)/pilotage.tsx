@@ -28,33 +28,37 @@ export default function Pilotage() {
 
   const exportCsv = () => {
     const rows: (string | number)[][] = [
-      ['# KaneOne Suite — Pilotage groupe — DONNÉES DE DÉMONSTRATION (Démo / Échantillon)'],
+      ['# KaneOne Suite — Pilotage groupe — DONNÉES D’EXEMPLE'],
       ['Site', 'Ville', 'Pays', 'Statut', 'Effectif', 'CA 12 mois (k€)', 'EBITDA 12 mois (k€)'],
       ...SITES.map((x) => [x.name, x.city, countryOf(x.countryId).name, SITE_STATUS[x.status], x.headcount, x.revenueK, x.ebitdaK]),
       ['Total', '', '', `${GROUP.activeSites}/${GROUP.sites} actifs`, GROUP.headcount, SITES.reduce((a, x) => a + x.revenueK, 0), GROUP.ebitdaK],
     ];
-    exportText('kaneone-pilotage-demo.csv', toCSV(rows), 'text/csv').then(() => toast('Export CSV prêt (démo)', 'success'));
+    exportText('kaneone-pilotage-demo.csv', toCSV(rows), 'text/csv').then(() => toast('Export CSV prêt', 'success'));
   };
 
   return (
     <Screen header={<TabHeader title="Pilotage groupe" subtitle="Vue consolidée multi-holding" />}>
       <DemoNotice />
       <Row wrap gap={10}>
-        <Stat label="EBITDA cumulé 12 mois" value={fmtCompactEUR(GROUP.ebitdaK * 1000)} sub="Démo / Échantillon" demo color={t.primary} />
+        <Stat label="EBITDA cumulé 12 mois" value={fmtCompactEUR(GROUP.ebitdaK * 1000)} sub="Chiffres d’exemple" demo color={t.primary} />
         <Stat label="Sites actifs" value={`${GROUP.activeSites}/${GROUP.sites}`} sub={`${COUNTRIES.length} pays`} demo />
-        <Stat label="Effectif" value={fmtNumber(GROUP.headcount)} sub="agrégat démo" demo />
+        <Stat label="Effectif" value={fmtNumber(GROUP.headcount)} sub="Agrégat d’exemple" demo />
         <Stat label="OT ouverts" value={String(openWOs.length)} sub={critical.length ? `${critical.length} critique(s)/escaladé(s)` : 'aucun critique'} color={critical.length ? t.dangerText : undefined} />
       </Row>
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <T v="h3">EBITDA mensuel — 12 mois glissants</T>
-          <Badge label="Démo" color={t.accent} icon="flask" />
+          <Badge label="Exemple" color={t.accent} icon="flask" />
         </Row>
         <Bars data={series} format={(n) => fmtCompactEUR(n)} />
         <T v="small" muted>
-          Démo / Échantillon — total {fmtCompactEUR(series.reduce((a, d) => a + d.value, 0))}. Répartition saisonnière illustrative. Les montants négatifs portent le signe « − ».
+          Exemple — total {fmtCompactEUR(series.reduce((a, d) => a + d.value, 0))}. Répartition saisonnière illustrative. Les montants négatifs portent le signe « − ».
         </T>
+      </Card>
+
+      <Card style={{ paddingVertical: 4 }}>
+        <ListItem icon="git-network" title="Détention du groupe" sub="Arbre des entités et pourcentages en transparence" onPress={() => router.push('/ownership')} />
       </Card>
 
       <Section title="Sites par pays" action={<Button small kind="ghost" icon="download" title="CSV" onPress={exportCsv} />}>

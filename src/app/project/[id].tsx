@@ -41,7 +41,7 @@ export default function ProjectScreen() {
         <KV k="Engagé" v={fmtCompactEUR(p.spentK * 1000)} amount={p.spentK * 1000} strong />
         <Progress value={p.budgetK ? Math.min(1, p.spentK / p.budgetK) : 0} color={p.spentK > p.budgetK ? t.danger : t.primary} />
         <T v="small" color={p.spentK > p.budgetK ? t.dangerText : t.textMuted}>
-          {p.spentK > p.budgetK ? `Dépassement de ${fmtCompactEUR((p.spentK - p.budgetK) * 1000)} — seuil YOUR_BUDGET_ALERT_PCT à valider` : 'Dans le budget'}
+          {p.spentK > p.budgetK ? `Dépassement de ${fmtCompactEUR((p.spentK - p.budgetK) * 1000)}. Le seuil d’alerte n’est pas fixé.` : 'Dans le budget'}
         </T>
         <KV k="SPV" v={spvOf(p.spvId)?.name ?? '—'} />
       </Card>

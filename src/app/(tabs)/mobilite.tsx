@@ -206,7 +206,7 @@ function NewMission({ visible, onClose, onCreated }: { visible: boolean; onClose
       </Card>
       <Button title="Créer la mission" icon="checkmark" full onPress={submit} disabled={!title.trim() || legs.length === 0} />
       <T v="small" muted center style={{ color: t.textMuted }}>
-        Données stockées localement (démo).
+        Données stockées sur cet appareil.
       </T>
     </Sheet>
   );

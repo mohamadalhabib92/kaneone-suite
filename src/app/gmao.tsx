@@ -131,7 +131,7 @@ function GmaoBody() {
         : null}
       {tab === 'inventaire' ? (
         <T v="small" muted>
-          Sites sans équipement dans l’échantillon ({SITES.filter((x) => !EQUIPMENT.some((e) => e.siteId === x.id)).length}/{SITES.length}) :{' '}
+          Sites sans équipement dans le jeu actuel ({SITES.filter((x) => !EQUIPMENT.some((e) => e.siteId === x.id)).length}/{SITES.length}) :{' '}
           {SITES.filter((x) => !EQUIPMENT.some((e) => e.siteId === x.id))
             .map((x) => x.city)
             .join(', ')}
@@ -148,7 +148,7 @@ function GmaoBody() {
                   <Card key={`${p.id}-${pmNonce}`}>
                     <T style={{ fontWeight: '700' }}>{p.task}</T>
                     <T v="small" muted>
-                      Équipement introuvable dans l’échantillon.
+                      Équipement introuvable.
                     </T>
                     <Button small kind="secondary" title="Réessayer" icon="refresh" onPress={() => setPmNonce((n) => n + 1)} />
                   </Card>

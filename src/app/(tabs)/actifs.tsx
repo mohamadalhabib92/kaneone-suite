@@ -29,7 +29,7 @@ export default function Actifs() {
         <Stat label="Actifs" value={String(ASSETS.length)} demo />
         <Stat label="Pays" value={String(COUNTRIES.length)} demo />
         <Stat label="SPV" value={String(SPVS.length)} demo />
-        <Stat label="Valeur (filtre)" value={fmtCompactEUR(total * 1000)} sub="valeur d’acquisition démo" demo />
+        <Stat label="Valeur (filtre)" value={fmtCompactEUR(total * 1000)} sub="valeur d’acquisition, exemple" demo />
       </Row>
       <T v="caption" muted>
         Pays

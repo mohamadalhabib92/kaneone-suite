@@ -12,7 +12,7 @@ export function BackHeader({ title, subtitle, right }: { title: string; subtitle
       title={title}
       subtitle={subtitle}
       left={<IconButton icon="chevron-back" a11y="Retour" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />}
-      right={right ?? <DemoBadge label="Démo" />}
+      right={right ?? <DemoBadge label="Exemple" />}
     />
   );
 }
@@ -27,7 +27,7 @@ export function TabHeader({ title, subtitle }: { title: string; subtitle?: strin
       subtitle={subtitle}
       right={
         <Row gap={6}>
-          <DemoBadge label="Démo" />
+          <DemoBadge label="Exemple" />
           <Chip label={roleLabel(role).split(' ')[0]} icon="person-circle" onPress={() => router.push('/settings')} />
         </Row>
       }
@@ -44,14 +44,14 @@ export function NeedPerm({ perm, what }: { perm: Perm; what: string }) {
     <Banner
       kind="warning"
       title="Lecture seule pour votre rôle"
-      text={`Le rôle « ${roleLabel(role)} » ne peut pas ${what}. En démo, vous pouvez changer de rôle.`}
+      text={`Le rôle « ${roleLabel(role)} » ne peut pas ${what}. Le rôle se change dans Paramètres.`}
       action={<Button small kind="secondary" title="Changer de rôle" icon="swap-horizontal" onPress={() => router.push('/settings')} />}
     />
   );
 }
 
 export function DemoNotice() {
-  return <Banner kind="demo" title="Données de démonstration" text="Démo / Échantillon : chiffres fictifs tant qu’aucune base réelle n’est branchée. Ne pas utiliser pour décider." />;
+  return <Banner kind="demo" title="Données d’exemple" text="Chiffres d’exemple, pas une base réelle. Ne pas utiliser pour décider." />;
 }
 
 /** Histogramme simple (barres en View, sans dépendance). */
@@ -109,7 +109,7 @@ export function Figure({ amount, text }: { amount: number; text: string }) {
   const neg = amount < 0;
   return (
     <View style={{ alignItems: 'flex-end', gap: 2 }}>
-      <T v="small" tabular color={neg ? t.dangerText : t.text} accessibilityLabel={neg ? `${text}, négatif, démonstration` : `${text}, démonstration`} style={{ fontWeight: '700' }}>
+      <T v="small" tabular color={neg ? t.dangerText : t.text} accessibilityLabel={neg ? `${text}, négatif, exemple` : `${text}, exemple`} style={{ fontWeight: '700' }}>
         {text}
       </T>
       <DemoMark />

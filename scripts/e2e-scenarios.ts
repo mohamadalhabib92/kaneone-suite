@@ -1,13 +1,17 @@
 import { spawnSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { contrast } from '../src/kit/contrast';
+import { kitPairs } from '../src/kit/a11yPairs';
+import { contrast, ensureContrast, mix } from '../src/kit/contrast';
+import { createVibrationPref } from '../src/kit/vibrations';
 import { reportCrash, recentCrashes } from '../src/kit/crash';
 import { FLAGS } from '../src/config';
 import { BASES, COUNTRIES, DOSSIER_MODULES, FINANCE_REPOS, GROUP, REQUIREMENTS, SITES, VEHICLE_CATEGORIES } from '../src/data/demo';
 import { SCENARIOS, scenarioProgress } from '../src/lib/scenarios';
 import { store } from '../src/state';
-import { kane, kanePrint } from '../src/theme';
+import { glassComposite } from '../src/kit/verre';
+import { chainLookThrough, flattenOwnership, ownershipTree } from '../src/lib/ownership';
+import { kane, kaneDay, kanePrint } from '../src/theme';
 
 function fail(message: string): never {
   throw new Error(message);
@@ -48,6 +52,68 @@ for (const [label, fg, bg] of pairs) {
   const ratio = contrast(fg, bg);
   if (ratio < 4.5) fail(`${label} : contraste ${ratio.toFixed(2)} < 4.5`);
 }
+
+// Accessibilité : tous les couples dessinés par le kit, sombre (kane), jour (kaneDay) et impression.
+const a11yFailures: string[] = [];
+for (const [name, p] of [['sombre', kane], ['jour', kaneDay], ['impression', kanePrint]] as const) {
+  const chip = (c: string) => ensureContrast(ensureContrast(c, mix(c, p.surface, 0.16), p.text), mix(c, p.bg, 0.16), p.text);
+  const kit = kitPairs(p, name, {
+    buttons: [
+      ['principal', p.primaryText, p.primary],
+      ['danger', p.onDanger, p.danger],
+      ['succès', p.onSuccess, p.success],
+    ],
+    ghostInk: p.primary,
+    chipInk: chip,
+    badgeInk: (c) => ensureContrast(c, mix(c, p.surface, 0.15), p.text),
+    badgeColors: [
+      ['succès', p.success],
+      ['alerte', p.warning],
+      ['info', p.info],
+      ['rouge', p.dangerText],
+      ['or', p.accent],
+      ['primaire', p.primary],
+    ],
+    toast: { bg: p.toastBg, fg: p.toastFg },
+    fieldError: p.dangerText,
+    emptyInk: p.primary, // inkOf(t) du kit
+  });
+  for (const [label, fg, bg, min] of kit) {
+    const r = contrast(fg, bg);
+    if (r < min) a11yFailures.push(`${label} : ${r.toFixed(2)} < ${min}`);
+  }
+}
+if (a11yFailures.length) fail('Contraste insuffisant :\n' + a11yFailures.join('\n'));
+
+for (const [name, p] of [['verre sombre', kane], ['verre jour', kaneDay], ['verre impression', kanePrint]] as const) {
+  const onPage = glassComposite(p.surface, p.bg);
+  const onWhite = glassComposite(p.surface, '#FFFFFF');
+  for (const [where, bg] of [['page', onPage], ['aplat clair', onWhite]] as const) {
+    for (const [inkName, ink] of [['texte', p.text], ['texte atténué', p.textMuted]] as const) {
+      const ratio = contrast(ink, bg);
+      if (ratio < 4.5) fail(`${name} ${inkName} / ${where} : ${ratio.toFixed(2)} < 4.5`);
+    }
+  }
+}
+
+// Réglage « Vibrations » : activé par défaut, clé dédiée, aucune donnée touchée.
+const VIBRATIONS_KEY = 'kaneone-suite:vibrations@v1';
+if (!readFileSync(join(root, 'src/kit/haptics.ts'), 'utf8').includes(`'${VIBRATIONS_KEY}'`)) fail('clé vibrations modifiée');
+void (async () => {
+  const mem = new Map<string, string>([['kaneone-suite@v1', '{}']]);
+  const pref = createVibrationPref(
+    { getItem: async (k: string) => mem.get(k) ?? null, setItem: async (k: string, v: string) => void mem.set(k, v) },
+    VIBRATIONS_KEY,
+  );
+  await pref.hydrate();
+  if (!pref.get()) fail('vibrations désactivées par défaut');
+  pref.set(false);
+  await new Promise((r) => setTimeout(r, 0));
+  if (mem.get(VIBRATIONS_KEY) !== 'off' || mem.get('kaneone-suite@v1') !== '{}' || mem.size !== 2) fail('vibrations : stockage inattendu');
+})().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
 
 let fetchCalled = false;
 globalThis.fetch = () => {
@@ -117,4 +183,29 @@ const envExample = readFileSync(join(root, '.env.example'), 'utf8');
 for (const re of banned) if (re.test(envExample)) fail(`.env.example ${re}`);
 if (!envExample.includes('YOUR_SENTRY_DSN') || !envExample.includes('EXPO_NO_CAPABILITY_SYNC=1')) fail('env example incomplet');
 
+const tree = ownershipTree();
+if (tree.kind !== 'groupe' || tree.lookThrough !== 100 || tree.direct !== 100) fail('racine de détention');
+if (chainLookThrough(80, 50) !== 40) fail('transparence 80 × 50');
+const nodes = flattenOwnership(tree);
+const spvNodes = nodes.filter((n) => n.kind === 'spv');
+const assetNodes = nodes.filter((n) => n.kind === 'actif');
+if (spvNodes.length !== 15 || assetNodes.length !== 15) fail(`arbre ${spvNodes.length}/${assetNodes.length}`);
+const stlouis = spvNodes.find((n) => n.id === 'spv-stlouis');
+const atar = spvNodes.find((n) => n.id === 'spv-atar');
+const dakhla = spvNodes.find((n) => n.id === 'spv-dkh');
+if (!stlouis || stlouis.direct !== 80 || stlouis.lookThrough !== 80) fail('Saint-Louis 80 %');
+if (!atar || atar.lookThrough !== 60) fail('Atar 60 %');
+if (!dakhla || dakhla.lookThrough !== 51) fail('Dakhla 51 %');
+const stlouisAsset = stlouis.children[0];
+if (!stlouisAsset || stlouisAsset.kind !== 'actif' || stlouisAsset.direct !== 100 || stlouisAsset.lookThrough !== 80) fail('actif Saint-Louis en transparence');
+if (nodes.some((n) => n.kind === 'pays' && n.direct !== null)) fail('un pays ne détient pas');
+if (nodes.some((n) => n.lookThrough < 0 || n.lookThrough > 100)) fail('transparence hors bornes');
+if (spvNodes.filter((n) => n.lookThrough < 100).length !== 5) fail('participations partielles');
+
+for (const file of walk(join(root, 'src', 'app')).concat(walk(join(root, 'src', 'components')))) {
+  if (!file.endsWith('.tsx') && !file.endsWith('.ts')) continue;
+  if (readFileSync(file, 'utf8').includes('YOUR_')) fail(`${file} affiche un placeholder YOUR_`);
+}
+
 console.log(`Passe 1 : ${SCENARIOS.length}/${SCENARIOS.length} scénarios, contraste AA, stockage ${store.key}`);
+console.log('Accessibilité : contraste AA du kit (sombre, jour, impression), vibrations activées par défaut');
